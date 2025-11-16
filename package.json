@@ -55,9 +55,13 @@
       "public/unlock.mp3",
       "public/camera.mp3",
       "public/achievement.mp3",
-      
-      "disguise/**/*",
       "node_modules/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": "disguise",
+        "to": "disguise"
+      }
     ],
     "publish": {
       "provider": "github",
