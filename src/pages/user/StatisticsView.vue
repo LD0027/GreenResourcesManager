@@ -514,6 +514,10 @@ export default {
           if (!this.userProfile.loginHistory) {
             this.userProfile.loginHistory = []
           }
+          // 确保 checkInDays 数组存在
+          if (!this.userProfile.checkInDays) {
+            this.userProfile.checkInDays = []
+          }
           // 如果之前没有设置过这些字段，现在需要保存
           if (!profile.joinDate) {
             await this.saveUserProfile()
@@ -525,6 +529,10 @@ export default {
           // 确保 loginHistory 数组存在
           if (!this.userProfile.loginHistory) {
             this.userProfile.loginHistory = []
+          }
+          // 确保 checkInDays 数组存在
+          if (!this.userProfile.checkInDays) {
+            this.userProfile.checkInDays = []
           }
           await this.saveUserProfile()
         }
@@ -538,6 +546,10 @@ export default {
         if (!this.userProfile.loginHistory) {
           this.userProfile.loginHistory = []
         }
+        // 确保 checkInDays 数组存在
+        if (!this.userProfile.checkInDays) {
+          this.userProfile.checkInDays = []
+        }
       }
     },
     async saveUserProfile() {
@@ -545,6 +557,10 @@ export default {
         // 确保 joinDate 有值（如果是新用户）
         if (!this.userProfile.joinDate) {
           this.userProfile.joinDate = new Date().toISOString()
+        }
+        // 确保 checkInDays 数组存在
+        if (!this.userProfile.checkInDays) {
+          this.userProfile.checkInDays = []
         }
         // lastActive 由 loginHistory 队列维护，不在这里更新
         
@@ -891,6 +907,8 @@ export default {
   async mounted() {
     console.log('统计页面已加载')
     await this.loadUserProfile()
+    // 自动记录登录并保存（每次打开页面时，saveUserProfile 内部会调用 autoRecordLogin）
+    await this.saveUserProfile()
     // 初始化使用时长跟踪（仅同步数据，startUsageTracking 已在 App.vue 中调用）
     await this.initializeUsageTracking()
     await this.loadMediaStatistics()
