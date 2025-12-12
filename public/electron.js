@@ -2649,18 +2649,23 @@ function updateSafetyKey(enabled, url) {
 
 // JSON 文件操作 IPC 处理程序
 ipcMain.handle('write-json-file', async (event, filePath, data) => {
+  const fs = require('fs')
+  const path = require('path')
+  let tempFilePath = null
+  
   try {
-    const fs = require('fs')
-    const path = require('path')
-    
     // console.log('=== 开始写入 JSON 文件 ===')
     // console.log('文件路径:', filePath)
+    
     // 确保目录存在
     const dir = path.dirname(filePath)
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true })
       // console.log('创建目录:', dir)
     }
+    
+    // 生成临时文件路径（在原文件路径基础上加 .tmp）
+    tempFilePath = filePath + '.tmp'
     
     // 验证数据是否可以序列化
     let jsonString
@@ -2677,16 +2682,63 @@ ipcMain.handle('write-json-file', async (event, filePath, data) => {
       return { success: false, error: `数据序列化失败: ${serializeError.message}` }
     }
     
-    // 写入 JSON 文件
-    fs.writeFileSync(filePath, jsonString, 'utf8')
+    // 第一步：先写入临时文件
+    fs.writeFileSync(tempFilePath, jsonString, 'utf8')
+    // console.log('临时文件写入成功:', tempFilePath)
+    
+    // 第二步：验证临时文件写入成功
+    if (!fs.existsSync(tempFilePath)) {
+      console.error('临时文件写入后不存在!')
+      return { success: false, error: '临时文件写入失败' }
+    }
+    
+    // 检查文件大小（应该大于0）
+    const tempStats = fs.statSync(tempFilePath)
+    if (tempStats.size === 0) {
+      console.error('临时文件大小为0，写入失败')
+      // 清理临时文件
+      try {
+        fs.unlinkSync(tempFilePath)
+      } catch (cleanupError) {
+        // 忽略清理错误
+      }
+      return { success: false, error: '临时文件写入失败（文件大小为0）' }
+    }
+    
+    // 验证临时文件的 JSON 格式是否正确（尝试解析）
+    try {
+      const testData = fs.readFileSync(tempFilePath, 'utf8')
+      JSON.parse(testData)
+      // console.log('临时文件 JSON 格式验证通过')
+    } catch (parseError) {
+      console.error('临时文件 JSON 格式验证失败:', parseError)
+      // 清理临时文件
+      try {
+        fs.unlinkSync(tempFilePath)
+      } catch (cleanupError) {
+        // 忽略清理错误
+      }
+      return { success: false, error: `临时文件 JSON 格式验证失败: ${parseError.message}` }
+    }
+    
+    // 第三步：原子性替换 - 使用 renameSync 将临时文件重命名为目标文件
+    // 这是原子操作，要么成功要么失败，不会出现中间状态
+    fs.renameSync(tempFilePath, filePath)
+    tempFilePath = null // 标记已成功，不需要清理
+    
     // console.log('JSON 文件写入成功:', filePath)
     
-    // 验证文件是否真的写入了
+    // 最终验证：确认目标文件存在且有效
     if (fs.existsSync(filePath)) {
       const stats = fs.statSync(filePath)
+      if (stats.size === 0) {
+        console.error('目标文件大小为0!')
+        return { success: false, error: '目标文件写入失败（文件大小为0）' }
+      }
       // console.log('文件大小:', stats.size, 'bytes')
     } else {
-      console.error('文件写入后不存在!')
+      console.error('目标文件写入后不存在!')
+      return { success: false, error: '目标文件写入失败' }
     }
     
     // console.log('=== JSON 文件写入完成 ===')
@@ -2694,6 +2746,17 @@ ipcMain.handle('write-json-file', async (event, filePath, data) => {
   } catch (error) {
     console.error('写入 JSON 文件失败:', error)
     console.error('错误堆栈:', error.stack)
+    
+    // 清理临时文件（如果存在）
+    if (tempFilePath && fs.existsSync(tempFilePath)) {
+      try {
+        fs.unlinkSync(tempFilePath)
+        console.log('已清理临时文件:', tempFilePath)
+      } catch (cleanupError) {
+        console.error('清理临时文件失败:', cleanupError)
+      }
+    }
+    
     return { success: false, error: error.message }
   }
 })

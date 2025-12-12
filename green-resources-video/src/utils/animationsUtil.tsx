@@ -24,6 +24,31 @@ export function* moveAndShow<T extends Node>(
 	);
 }
 
+/**
+ * 隐藏并删除节点（淡出后删除）
+ * @param nodeRef 节点引用（可以是 Img、Txt、Rect、Layout 等任意 Node 类型）
+ * @param duration 淡出动画持续时间（秒），默认0.5秒
+ * @param waitTime 删除前等待时间（秒），默认0.1秒
+ * @returns ThreadGenerator 可以 yield* 来等待动画完成
+ */
+export function* hideAndRemove<T extends Node>(
+	nodeRef: ReturnType<typeof createRef<T>>,
+	duration: number = 0.5,
+	waitTime: number = 0.1
+): ThreadGenerator {
+	const node = nodeRef();
+	if (!node) return;
+	
+	// 淡出
+	yield* node.opacity(0, duration, easeOutCubic);
+	
+	// 等待一小段时间
+	yield* waitFor(waitTime);
+	
+	// 删除节点
+	node.remove();
+}
+
 
 
 /**
@@ -89,6 +114,14 @@ export function* blackHoleEffect<T extends Node>(
 	
 	// 同时执行所有节点的动画
 	yield* all(...animations);
+	
+	// 动画结束后删除所有节点
+	for (const nodeRef of nodeRefs) {
+		const node = nodeRef();
+		if (node) {
+			node.remove();
+		}
+	}
 }
 
 /**

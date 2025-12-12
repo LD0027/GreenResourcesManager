@@ -45,6 +45,8 @@ export interface TreeNodeData {
 	label: string;
 	children?: TreeNodeData[];
 	parent?: TreeNodeData;
+	/** 自定义节点渲染函数（从 TreeNodeRoot 继承） */
+	render?: NodeRenderer;
 }
 
 // 主题配置
@@ -124,6 +126,7 @@ export function convertToTreeNodes(
 			key: node.key || node.label,
 			label: node.label,
 			parent: node.parent,
+			render: node.render, // 保留自定义渲染函数
 		};
 		nodes.push(treeNode);
 
@@ -134,8 +137,9 @@ export function convertToTreeNodes(
 				for (const child of node.children) {
 					const childNode = {
 						...child,
-						key: child.key || child.label,
+						key: child.key || `${treeNode.key}_${child.label}`,
 						parent: treeNode,
+						render: child.render, // 保留自定义渲染函数
 					};
 					children.push(childNode);
 					queue.push(childNode);
@@ -145,8 +149,9 @@ export function convertToTreeNodes(
 				for (const [key, value] of Object.entries(node.children)) {
 					const childNode = {
 						...(value as any),
-						key: key,
+						key: (value as any).key || `${treeNode.key}_${key}`,
 						parent: treeNode,
+						render: (value as any).render, // 保留自定义渲染函数
 					};
 					children.push(childNode);
 					queue.push(childNode);
@@ -160,12 +165,55 @@ export function convertToTreeNodes(
 }
 
 /**
+ * 自定义节点渲染函数类型
+ * @param node 节点数据
+ * @param theme 主题配置
+ * @param position 节点位置 [x, y]
+ * @param ref 节点引用（用于设置 ref，可以是任何类型的引用）
+ * @returns 返回一个 Motion Canvas 节点元素（通常是 Rect、Layout 或自定义组件）
+ */
+export type NodeRenderer = (
+	node: TreeNodeData,
+	theme: Required<TreeNodeTheme>,
+	position: [number, number] | (() => [number, number]),
+	ref: ReturnType<typeof createRef<any>>
+) => any;
+
+/**
+ * 获取节点的精确底部中心点位置
+ */
+function getNodeBottomCenter(nodeRef: ReturnType<typeof createRef<any>>): [number, number] {
+	if (!nodeRef || !nodeRef()) {
+		return [0, 0];
+	}
+	const node = nodeRef();
+	const pos = node.position();
+	const size = node.size();
+	return [pos.x, pos.y + size.height / 2];
+}
+
+/**
+ * 获取节点的精确顶部中心点位置
+ */
+function getNodeTopCenter(nodeRef: ReturnType<typeof createRef<any>>): [number, number] {
+	if (!nodeRef || !nodeRef()) {
+		return [0, 0];
+	}
+	const node = nodeRef();
+	const pos = node.position();
+	const size = node.size();
+	return [pos.x, pos.y - size.height / 2];
+}
+
+/**
  * 树形数据接口
  */
 export interface TreeNodeRoot {
 	key?: string;
 	label: string;
 	children?: Record<string, any> | any[];
+	/** 自定义节点渲染函数（可选，如果提供则使用此函数渲染该节点） */
+	render?: NodeRenderer;
 }
 
 /**
@@ -180,6 +228,8 @@ export interface TreeNodeProps extends LayoutProps {
 	theme?: SignalValue<TreeNodeTheme>;
 	/** 布局配置（使用 treeLayout 避免与 Layout 的 layout 冲突） */
 	treeLayout?: SignalValue<TreeNodeLayout>;
+	/** 全局节点渲染函数（可选，如果节点没有提供 render 函数，则使用此函数） */
+	nodeRenderer?: NodeRenderer;
 }
 
 /**
@@ -200,6 +250,9 @@ export class TreeNodeComponent extends Layout {
 	@initial({})
 	@signal()
 	public declare readonly treeLayout: SimpleSignal<TreeNodeLayout, this>;
+
+	@signal()
+	public declare readonly nodeRenderer: SimpleSignal<NodeRenderer | undefined, this>;
 
 	// 内部引用（如果外部没有提供）
 	private internalRefs?: TreeNodeRefs;
@@ -224,6 +277,43 @@ export class TreeNodeComponent extends Layout {
 	}
 
 	/**
+	 * 创建默认节点（内部辅助方法）
+	 */
+	private createDefaultNode(
+		node: TreeNodeData,
+		ref: ReturnType<typeof createRef<Rect>>,
+		position: [number, number] | (() => [number, number]),
+		theme: Required<TreeNodeTheme>
+	): Rect {
+		return (
+			<Rect
+				ref={ref}
+				position={position}
+				fill={theme.bg}
+				radius={theme.radius}
+				layout
+				scale={0.9}
+				opacity={0}
+				strokeFirst
+				stroke={theme.stroke}
+				lineWidth={2}
+				direction="column"
+				alignItems="center"
+				justifyContent="center"
+				padding={20}
+			>
+				<Txt
+					text={node.label}
+					fontSize={theme.fontSize}
+					fill={theme.text}
+					fontFamily="Microsoft YaHei, sans-serif"
+					textAlign="center"
+				/>
+			</Rect>
+		) as Rect;
+	}
+
+	/**
 	 * 构建树形结构
 	 */
 	private buildTree() {
@@ -232,6 +322,7 @@ export class TreeNodeComponent extends Layout {
 		const finalLayout: TreeNodeLayout = { ...defaultLayout, ...this.treeLayout() };
 		const showArrows = true; // 始终显示箭头
 		const refs = this.internalRefs!;
+		const globalNodeRenderer = this.nodeRenderer();
 
 		// 检查根节点数组
 		if (!roots || roots.length === 0) {
@@ -291,66 +382,52 @@ export class TreeNodeComponent extends Layout {
 
 					// 使用函数形式计算位置，确保在渲染时动态获取父节点位置
 					const parentRef = refs.nodeRefs[node.parent.key];
+					const nodeRef = refs.nodeRefs[node.key];
 
-					// 创建节点时使用 position 函数
-					this.add(
-						<Rect
-							ref={refs.nodeRefs[node.key]}
-							position={() => {
-								// 尝试获取父节点位置
-								if (parentRef) {
-									const parentNode = parentRef();
-									if (parentNode) {
-										const parentPos = parentNode.position();
-										return [
-											parentPos.x + startX + siblingIndex * spacing,
-											parentPos.y + rowSpacing
-										];
-									}
-								}
-								// 回退到默认位置
-								if (node.parent && node.parent.parent && node.parent.parent.key === 'root') {
-									const secondLevelIndex = node.parent.parent.children?.findIndex(
-										child => child.key === node.parent?.key
-									) || 0;
-									const secondLevelSpacing = 180;
-									const secondLevelTotalWidth = ((node.parent.parent.children?.length || 1) - 1) * secondLevelSpacing;
-									const secondLevelStartX = -secondLevelTotalWidth / 2;
-									const secondLevelY = -this.height() / 2 + 350;
-
-									return [
-										secondLevelStartX + secondLevelIndex * secondLevelSpacing + startX + siblingIndex * spacing,
-										secondLevelY + rowSpacing
-									];
-								}
-								// 最终回退
+					// 计算位置函数
+					const positionFn = (): [number, number] => {
+						// 尝试获取父节点位置
+						if (parentRef) {
+							const parentNode = parentRef();
+							if (parentNode) {
+								const parentPos = parentNode.position();
 								return [
-									(siblingIndex - (totalSiblings - 1) / 2) * spacing,
-									row * rowSpacing - this.height() / 2 + finalLayout.verticalOffset + 150
-								];
-							}}
-							fill={finalTheme.bg}
-							radius={finalTheme.radius}
-							layout
-							scale={0.9}
-							opacity={0}
-							strokeFirst
-							stroke={finalTheme.stroke}
-							lineWidth={2}
-							direction="column"
-							alignItems="center"
-							justifyContent="center"
-							padding={20}
-						>
-							<Txt
-								text={node.label}
-								fontSize={finalTheme.fontSize}
-								fill={finalTheme.text}
-								fontFamily="Microsoft YaHei, sans-serif"
-								textAlign="center"
-							/>
-						</Rect>
-					);
+									parentPos.x + startX + siblingIndex * spacing,
+									parentPos.y + rowSpacing
+								] as [number, number];
+							}
+						}
+						// 回退到默认位置
+						if (node.parent && node.parent.parent && node.parent.parent.key === 'root') {
+							const secondLevelIndex = node.parent.parent.children?.findIndex(
+								child => child.key === node.parent?.key
+							) || 0;
+							const secondLevelSpacing = 180;
+							const secondLevelTotalWidth = ((node.parent.parent.children?.length || 1) - 1) * secondLevelSpacing;
+							const secondLevelStartX = -secondLevelTotalWidth / 2;
+							const secondLevelY = -this.height() / 2 + 350;
+
+							return [
+								secondLevelStartX + secondLevelIndex * secondLevelSpacing + startX + siblingIndex * spacing,
+								secondLevelY + rowSpacing
+							] as [number, number];
+						}
+						// 最终回退
+						return [
+							(siblingIndex - (totalSiblings - 1) / 2) * spacing,
+							row * rowSpacing - this.height() / 2 + finalLayout.verticalOffset + 150
+						] as [number, number];
+					};
+
+					// 检查是否有自定义渲染函数
+					const customRenderer = node.render || globalNodeRenderer;
+					if (customRenderer) {
+						// 使用自定义渲染函数
+						this.add(customRenderer(node, finalTheme, positionFn, nodeRef));
+					} else {
+						// 使用默认节点
+						this.add(this.createDefaultNode(node, nodeRef, positionFn, finalTheme));
+					}
 
 					// 创建连线
 					if (showArrows && node.parent && parentRef) {
@@ -363,37 +440,24 @@ export class TreeNodeComponent extends Layout {
 								lineWidth={6}
 								stroke="#000"
 								radius={8}
-								startOffset={10}
-								endOffset={10}
+								startOffset={0}
+								endOffset={0}
 								endArrow
 								end={0}
 								opacity={0}
 								zIndex={-1}
 								points={[
+									() => getNodeBottomCenter(parentRef),
 									() => {
-										if (parentRef && parentRef()) {
-											return parentRef().bottom();
-										}
-										return [0, 0];
+										const [x, y] = getNodeBottomCenter(parentRef);
+										return [x, y + offset];
 									},
 									() => {
-										if (parentRef && parentRef()) {
-											return parentRef().bottom().addY(offset);
-										}
-										return [0, offset];
+										const [childX] = getNodeTopCenter(childRef);
+										const [, parentY] = getNodeBottomCenter(parentRef);
+										return [childX, parentY + offset];
 									},
-									() => {
-										if (parentRef && parentRef() && childRef && childRef()) {
-											return [childRef().top().x, parentRef().bottom().y + offset];
-										}
-										return [0, offset];
-									},
-									() => {
-										if (childRef && childRef()) {
-											return childRef().top();
-										}
-										return [0, 0];
-									},
+									() => getNodeTopCenter(childRef),
 								]}
 							/>
 						);
@@ -409,33 +473,18 @@ export class TreeNodeComponent extends Layout {
 				}
 
 				// 创建节点
-				this.add(
-					<Rect
-						ref={refs.nodeRefs[node.key]}
-						x={x}
-						y={y}
-						fill={finalTheme.bg}
-						radius={finalTheme.radius}
-						layout
-						scale={0.9}
-						opacity={0}
-						strokeFirst
-						stroke={finalTheme.stroke}
-						lineWidth={2}
-						direction="column"
-						alignItems="center"
-						justifyContent="center"
-						padding={20}
-					>
-						<Txt
-							text={node.label}
-							fontSize={finalTheme.fontSize}
-							fill={finalTheme.text}
-							fontFamily="Microsoft YaHei, sans-serif"
-							textAlign="center"
-						/>
-					</Rect>
-				);
+				const nodeRef = refs.nodeRefs[node.key];
+				const position: [number, number] = [x, y];
+
+				// 检查是否有自定义渲染函数
+				const customRenderer = node.render || globalNodeRenderer;
+				if (customRenderer) {
+					// 使用自定义渲染函数
+					this.add(customRenderer(node, finalTheme, position, nodeRef));
+				} else {
+					// 使用默认节点
+					this.add(this.createDefaultNode(node, nodeRef, position, finalTheme));
+				}
 
 				// 如果有父节点，创建连线
 				if (node.parent && showArrows) {
@@ -454,17 +503,24 @@ export class TreeNodeComponent extends Layout {
 							lineWidth={6}
 							stroke="#000"
 							radius={8}
-							startOffset={10}
-							endOffset={10}
+							startOffset={0}
+							endOffset={0}
 							endArrow
 							end={0}
 							opacity={0}
 							zIndex={-1}
 							points={[
-								() => parentRef().bottom(),
-								() => parentRef().bottom().addY(offset),
-								() => [childRef().top().x, parentRef().bottom().y + offset],
-								() => childRef().top(),
+								() => getNodeBottomCenter(parentRef),
+								() => {
+									const [x, y] = getNodeBottomCenter(parentRef);
+									return [x, y + offset];
+								},
+								() => {
+									const [childX] = getNodeTopCenter(childRef);
+									const [, parentY] = getNodeBottomCenter(parentRef);
+									return [childX, parentY + offset];
+								},
+								() => getNodeTopCenter(childRef),
 							]}
 						/>
 					);
@@ -481,6 +537,17 @@ export class TreeNodeComponent extends Layout {
 	 */
 	public getRefs(): TreeNodeRefs {
 		return this.internalRefs!;
+	}
+
+	/**
+	 * 获取指定节点的引用（支持类型转换）
+	 * @param nodeKey 节点的 key
+	 * @returns 节点引用，如果不存在则返回 undefined
+	 */
+	public getNodeRef<T = Rect>(nodeKey: string): ReturnType<typeof createRef<T>> | undefined {
+		const refs = this.internalRefs!;
+		const nodeRef = refs.nodeRefs[nodeKey];
+		return nodeRef as ReturnType<typeof createRef<T>> | undefined;
 	}
 
 	/**
@@ -624,7 +691,7 @@ export class TreeNodeComponent extends Layout {
 	 */
 	public *addNodesTo(
 		nodeName: string,
-		childrenLabels: string[],
+		childrenLabels: string[] | Array<{key?: string, label: string, render?: NodeRenderer}>,
 		options: {
 			duration?: number; // 动画时长，默认0.5秒
 			easing?: (t: number) => number; // 缓动函数，默认easeOutCubic
@@ -652,10 +719,12 @@ export class TreeNodeComponent extends Layout {
 		const finalChildSpacing = childSpacing ?? finalLayout.columnSpacing;
 		const finalChildVerticalOffset = childVerticalOffset ?? finalLayout.rowSpacing;
 		
-		// 将字符串数组转换为对象数组（key 和 label 都使用字符串值）
-		const childrenNodes = childrenLabels.map(label => ({
-			label: label,
-		}));
+		// 将字符串数组转换为对象数组（key 和 label 都使用字符串值），或直接使用对象数组
+		const childrenNodes = Array.isArray(childrenLabels) && childrenLabels.length > 0 && typeof childrenLabels[0] === 'string'
+			? (childrenLabels as string[]).map(label => ({
+				label: label,
+			}))
+			: (childrenLabels as Array<{key?: string, label: string, render?: NodeRenderer}>);
 		
 		// 添加节点
 		const addedNodes = addNodesTo({
@@ -669,6 +738,7 @@ export class TreeNodeComponent extends Layout {
 			childHorizontalOffset,
 			showArrows,
 			zIndex: undefined,
+			nodeRenderer: this.nodeRenderer(), // 传递全局节点渲染函数
 		});
 
 		// 等待一帧确保添加完成
@@ -1068,37 +1138,24 @@ export function TreeNodeFunction({
 							lineWidth={6}
 							stroke="#000"
 							radius={8}
-							startOffset={10}
-							endOffset={10}
+							startOffset={0}
+							endOffset={0}
 							endArrow
 							end={0}
 							opacity={0}
 							zIndex={(zIndex || 0) - 1}
 							points={[
+								() => getNodeBottomCenter(parentRef),
 								() => {
-									if (parentRef && parentRef()) {
-										return parentRef().bottom();
-									}
-									return [0, 0];
+									const [x, y] = getNodeBottomCenter(parentRef);
+									return [x, y + offset];
 								},
 								() => {
-									if (parentRef && parentRef()) {
-										return parentRef().bottom().addY(offset);
-									}
-									return [0, offset];
+									const [childX] = getNodeTopCenter(childRef);
+									const [, parentY] = getNodeBottomCenter(parentRef);
+									return [childX, parentY + offset];
 								},
-								() => {
-									if (parentRef && parentRef() && childRef && childRef()) {
-										return [childRef().top().x, parentRef().bottom().y + offset];
-									}
-									return [0, offset];
-								},
-								() => {
-									if (childRef && childRef()) {
-										return childRef().top();
-									}
-									return [0, 0];
-								},
+								() => getNodeTopCenter(childRef),
 							]}
 						/>
 					);
@@ -1155,17 +1212,24 @@ export function TreeNodeFunction({
 						lineWidth={6}
 						stroke="#000"
 						radius={8}
-						startOffset={10}
-						endOffset={10}
+						startOffset={0}
+						endOffset={0}
 						endArrow
 						end={0}
 						opacity={0}
 						zIndex={(zIndex || 0) - 1}
 						points={[
-							() => parentRef().bottom(),
-							() => parentRef().bottom().addY(offset),
-							() => [childRef().top().x, parentRef().bottom().y + offset],
-							() => childRef().top(),
+							() => getNodeBottomCenter(parentRef),
+							() => {
+								const [x, y] = getNodeBottomCenter(parentRef);
+								return [x, y + offset];
+							},
+							() => {
+								const [childX] = getNodeTopCenter(childRef);
+								const [, parentY] = getNodeBottomCenter(parentRef);
+								return [childX, parentY + offset];
+							},
+							() => getNodeTopCenter(childRef),
 						]}
 					/>
 				);
@@ -1225,12 +1289,14 @@ export function addNodeTo({
 	childHorizontalOffset = 0,
 	showArrows = true,
 	zIndex,
+	nodeRenderer,
 }: {
 	refs: TreeNodeRefs;
 	nodeName: string;
 	childNode: {
 		key?: string;
 		label: string;
+		render?: NodeRenderer; // 支持自定义渲染函数
 	};
 	view: Layout;
 	theme?: TreeNodeTheme;
@@ -1239,6 +1305,7 @@ export function addNodeTo({
 	childHorizontalOffset?: number;
 	showArrows?: boolean;
 	zIndex?: number;
+	nodeRenderer?: NodeRenderer; // 全局节点渲染函数
 }): TreeNodeData | null {
 	const finalTheme = { ...defaultTheme, ...theme };
 
@@ -1260,12 +1327,13 @@ export function addNodeTo({
 	}
 
 	// 创建新的子节点
-	// 如果没有提供 key，使用 label 作为 key（确保唯一性）
-	const newChildKey = childNode.key || childNode.label;
+	// 如果没有提供 key，使用 `${parentKey}_${label}` 作为 key（确保全局唯一性）
+	const newChildKey = childNode.key || `${targetNode.key}_${childNode.label}`;
 	const newChild: TreeNodeData = {
 		key: newChildKey,
 		label: childNode.label,
 		parent: targetNode,
+		render: childNode.render, // 保留自定义渲染函数
 	};
 
 	// 添加到目标节点的子节点列表
@@ -1302,34 +1370,45 @@ export function addNodeTo({
 			childRef().y(y);
 		} else if (child.key === newChildKey) {
 			// 如果是新节点，创建它
-			view.add(
-				<Rect
-					ref={refs.nodeRefs[newChildKey]}
-					x={x}
-					y={y}
-					fill={finalTheme.bg}
-					radius={finalTheme.radius}
-					layout
-					scale={0.9}
-					opacity={0}
-					strokeFirst
-					stroke={finalTheme.stroke}
-					lineWidth={2}
-					direction="column"
-					alignItems="center"
-					justifyContent="center"
-					padding={20}
-					zIndex={zIndex}
-				>
-					<Txt
-						text={newChild.label}
-						fontSize={finalTheme.fontSize}
-						fill={finalTheme.text}
-						fontFamily="Microsoft YaHei, sans-serif"
-						textAlign="center"
-					/>
-				</Rect>
-			);
+			const childRef = refs.nodeRefs[newChildKey];
+			const position: [number, number] = [x, y];
+
+			// 检查是否有自定义渲染函数
+			const customRenderer = newChild.render || nodeRenderer;
+			if (customRenderer) {
+				// 使用自定义渲染函数
+				view.add(customRenderer(newChild, finalTheme, position, childRef));
+			} else {
+				// 使用默认节点（需要创建一个辅助函数，但这里直接创建）
+				view.add(
+					<Rect
+						ref={childRef}
+						x={x}
+						y={y}
+						fill={finalTheme.bg}
+						radius={finalTheme.radius}
+						layout
+						scale={0.9}
+						opacity={0}
+						strokeFirst
+						stroke={finalTheme.stroke}
+						lineWidth={2}
+						direction="column"
+						alignItems="center"
+						justifyContent="center"
+						padding={20}
+						zIndex={zIndex}
+					>
+						<Txt
+							text={newChild.label}
+							fontSize={finalTheme.fontSize}
+							fill={finalTheme.text}
+							fontFamily="Microsoft YaHei, sans-serif"
+							textAlign="center"
+						/>
+					</Rect>
+				);
+			}
 
 			// 创建连线
 			if (showArrows) {
@@ -1344,17 +1423,24 @@ export function addNodeTo({
 						lineWidth={6}
 						stroke="#000"
 						radius={8}
-						startOffset={10}
-						endOffset={10}
+						startOffset={0}
+						endOffset={0}
 						endArrow
 						end={0}
 						opacity={0}
 						zIndex={(zIndex || 0) - 1}
 						points={[
-							() => parentRef().bottom(),
-							() => parentRef().bottom().addY(offset),
-							() => [childRef().top().x, parentRef().bottom().y + offset],
-							() => childRef().top(),
+							() => getNodeBottomCenter(parentRef),
+							() => {
+								const [x, y] = getNodeBottomCenter(parentRef);
+								return [x, y + offset];
+							},
+							() => {
+								const [childX] = getNodeTopCenter(childRef);
+								const [, parentY] = getNodeBottomCenter(parentRef);
+								return [childX, parentY + offset];
+							},
+							() => getNodeTopCenter(childRef),
 						]}
 					/>
 				);
@@ -1389,12 +1475,14 @@ export function addNodesTo({
 	childHorizontalOffset = 0,
 	showArrows = true,
 	zIndex,
+	nodeRenderer,
 }: {
 	refs: TreeNodeRefs;
 	nodeName: string;
 	childrenNodes: Array<{
 		key?: string;
 		label: string;
+		render?: NodeRenderer; // 支持自定义渲染函数
 	}>;
 	view: Layout;
 	theme?: TreeNodeTheme;
@@ -1403,6 +1491,7 @@ export function addNodesTo({
 	childHorizontalOffset?: number;
 	showArrows?: boolean;
 	zIndex?: number;
+	nodeRenderer?: NodeRenderer; // 全局节点渲染函数
 }): TreeNodeData[] {
 	return childrenNodes.map(childNode =>
 		addNodeTo({
@@ -1416,6 +1505,7 @@ export function addNodesTo({
 			childHorizontalOffset,
 			showArrows,
 			zIndex,
+			nodeRenderer,
 		})
 	).filter(node => node !== null) as TreeNodeData[];
 }

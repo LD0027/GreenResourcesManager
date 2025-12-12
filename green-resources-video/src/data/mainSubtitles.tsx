@@ -1,11 +1,11 @@
 import { VideoScript } from '../interface/VideoScript';
 import { Layout, Rect, Txt, Line, Video } from '@motion-canvas/2d';
 import { all, easeOutCubic, waitFor, ThreadGenerator, createRef } from '@motion-canvas/core';
-import { fadeInNodes, moveAndShow, blackHoleEffect, showTreeNodesByLevel, showNodeChildren, showNode, hideNode, showCircleImages, fallAndDisappearCircleImages } from '../utils/animationsUtil';
+import { fadeInNodes, moveAndShow, blackHoleEffect, showTreeNodesByLevel, showNodeChildren, showNode, hideNode, showCircleImages, fallAndDisappearCircleImages, hideAndRemove } from '../utils/animationsUtil';
 import ProgressSegmentConfig from '../interface/ProgressSegmentConfig';
 import VideoPostion from '../utils/VideoPostion';
 import { createImage, createTexts, createCircleImages } from '../utils/creatorUtil';
-import { TreeNodeComponent, createTreeNodeRefs, addNodeTo, addNodesTo, removeNode } from '../nodes/TreeNode';
+import { TreeNodeComponent, createTreeNodeRefs, addNodeTo, addNodesTo, removeNode, NodeRenderer } from '../nodes/TreeNode';
 import { FolderComponent } from '../nodes/folder';
 import { Paper } from '../nodes/Paper';
 import { PersistentKeywords } from '../nodes/PersistentKeywords';
@@ -23,25 +23,25 @@ export function createMainSubtitles(
 ): VideoScript[] {
 	// 运行时长演示视频引用
 	const 运行时长视频Ref = createRef<Video>();
-	
+
 	// Unity示例视频引用
 	const unity视频Ref = createRef<Video>();
-	
+
 	// 注册游戏演示视频引用
 	const 注册游戏视频Ref = createRef<Video>();
-	
+
 	// 拖拽添加游戏演示视频引用
 	const 拖拽添加游戏视频Ref = createRef<Video>();
-	
+
 	// tag添加演示视频引用
 	const tag添加视频Ref = createRef<Video>();
-	
+
 	// 截图演示视频引用
 	const 截图视频Ref = createRef<Video>();
-	
+
 	// 安全键演示视频引用
 	const 安全键视频Ref = createRef<Video>();
-	
+
 	// 音频播放器演示视频引用
 	const 音频播放器视频Ref = createRef<Video>();
 
@@ -74,28 +74,52 @@ export function createMainSubtitles(
 		/>
 	);
 	view.add(硬盘Gallery);
-	
+
 	// 创建单一tag筛选图片
-	const 单一tag筛选Img = createImage(view, '/imgs/单一tag筛选.png', {
+	const 单一tag筛选Img = createImage(view, '/imgs/单一tag筛选标记.png', {
 		scale: 0.7,
 		initialPosition: () => VideoPostion.bottomCenter(view),
 	});
-	
+
 	// 创建多tag筛选图片
 	const 多tag筛选Img = createImage(view, '/imgs/多tag筛选.png', {
 		scale: 0.7,
 		initialPosition: () => VideoPostion.bottomCenter(view),
 	});
-	
+
 	// 创建图片浏览器图片
 	const 图片浏览器Img = createImage(view, '/imgs/图片浏览器.png', {
 		scale: 0.6,
 		initialPosition: () => VideoPostion.bottomCenter(view),
 	});
-	
+
 	// 创建图片浏览器2图片
 	const 图片浏览器2Img = createImage(view, '/imgs/图片浏览器2.png', {
 		scale: 0.6,
+		initialPosition: () => VideoPostion.bottomCenter(view),
+	});
+
+
+	// 创建小说阅读器图片
+	const 小说阅读器Img = createImage(view, '/imgs/小说播放器.png', {
+		scale: 1,
+		initialPosition: () => VideoPostion.bottomCenter(view),
+	});
+
+	// 创建小说阅读器2图片
+	const 小说阅读器2Img = createImage(view, '/imgs/小说播放器2.png', {
+		scale: 1,
+		initialPosition: () => VideoPostion.bottomCenter(view),
+	});
+	// 创建截图键位修改图片
+	const 截图键位修改Img = createImage(view, '/imgs/截图键位修改.png', {
+		scale: 0.7,
+		initialPosition: () => VideoPostion.bottomCenter(view),
+	});
+
+	// 创建排序方式图片
+	const 排序方式Img = createImage(view, '/imgs/排序方式.png', {
+		scale: 2.5,
 		initialPosition: () => VideoPostion.bottomCenter(view),
 	});
 
@@ -123,7 +147,7 @@ export function createMainSubtitles(
 		/>
 	);
 	view.add(粽子精IMG);
-	
+
 	// 创建游戏统计问题文本
 	const 游戏统计问题文本Refs = createTexts(view, ['是否浏览过？', '我玩过几次？', '总时长多少？'], {
 		centerPosition: () => VideoPostion.center(view),
@@ -132,9 +156,9 @@ export function createMainSubtitles(
 		spacing: 60,
 		direction: 'column',
 	});
-	
+
 	// 创建功能列表文本
-	const 功能列表文本Refs = createTexts(view, ['数据刮削', '自动解压', '云存档', '自动转区', '报错修复', '自动翻译'], {
+	const 功能列表文本Refs = createTexts(view, ['数据刮削', '自动解压', '云存档', '自动转区', '游戏报错分析', '自动翻译'], {
 		centerPosition: () => VideoPostion.center(view),
 		fontSize: 48,
 		color: '#000000',
@@ -168,16 +192,52 @@ export function createMainSubtitles(
 		direction: 'column',
 	});
 
+
+
+	const 伪装模式Img = createImage(view, '/imgs/伪装模式.png', {
+		scale: 1,
+		initialPosition: () => VideoPostion.bottomCenter(view),
+	});
+	view.add(伪装模式Img);
+
+	const 伪装模式展示Img = createImage(view, '/imgs/伪装模式展示.png', {
+		scale: 0.7,
+		initialPosition: () => VideoPostion.bottomCenter(view),
+	});
+	view.add(伪装模式展示Img);
+
+	const 伪装模式自由修改Img = createImage(view, '/imgs/伪装模式自由修改.png', {
+		scale: 1.4,
+		initialPosition: () => VideoPostion.bottomCenter(view),
+	});
+	view.add(伪装模式自由修改Img);
+
+	const 伪装模式_戒色吧Img = createImage(view, '/imgs/伪装模式_戒色吧.png', {
+		scale: 0.7,
+		initialPosition: () => VideoPostion.bottomCenter(view),
+	});
+	view.add(伪装模式_戒色吧Img);
+
+	// 创建多存档图片
+	const 多存档Img = createImage(view, '/imgs/多存档.png', {
+		scale: 0.8,
+		initialPosition: () => VideoPostion.bottomCenter(view),
+	});
+
 	// 创建文件夹树形结构引用
 	const folderTreeRefs = createTreeNodeRefs();
-	
+
 	// 创建 TreeNode 组件引用
 	const folderTreeRef = createRef<TreeNodeComponent>();
+
+	// 创建文件夹管理树（用于管理5个文件夹）
+	const 文件夹管理树Refs = createTreeNodeRefs();
+	const 文件夹管理树Ref = createRef<TreeNodeComponent>();
 
 	// 创建开发商树形结构引用（用于袖子社示例）
 	const developerTreeRefs = createTreeNodeRefs();
 	const developerTreeRef = createRef<TreeNodeComponent>();
-	
+
 	// 创建持久关键词组件
 	const persistentKeywordsRef = createRef<PersistentKeywords>();
 	view.add(
@@ -185,7 +245,7 @@ export function createMainSubtitles(
 			ref={persistentKeywordsRef}
 			position={() => VideoPostion.center(view)}
 			direction="column"
-		
+
 		/>
 	);
 
@@ -214,28 +274,29 @@ export function createMainSubtitles(
 		/>
 	);
 	view.add(乌云标题文本);
-	
-	
+
+
 	// 创建安全键和成就图片的引用（用于后续清除）
 	let 安全键Img: ReturnType<typeof createRef<any>> | null = null;
 	let 成就Img: ReturnType<typeof createRef<any>> | null = null;
+	let 统计页面Img: ReturnType<typeof createRef<any>> | null = null;
+	let 帮助页Img: ReturnType<typeof createRef<any>> | null = null;
 	let 绿色资源管理器Img: ReturnType<typeof createRef<any>> | null = null;
-	
+	let qq群Img: ReturnType<typeof createRef<any>> | null = null;
+	let 声明文本: ReturnType<typeof createTexts> | null = null;
+
 	// 创建快捷方式失效图片的引用
 	const 快捷方式失效Img = createImage(view, '/imgs/快捷方式失效.png', {
 		scale: 2,
 		initialPosition: () => VideoPostion.bottomCenter(view),
 	});
-	
-	// 创建5个Folder组件的引用
-	const 文件夹FolderRefs: ReturnType<typeof createRef<FolderComponent>>[] = [];
-	for (let i = 0; i < 5; i++) {
-		文件夹FolderRefs.push(createRef<FolderComponent>());
-	}
-	
+
+	// 文件夹列表（用于创建树）
+	const 文件夹列表 = ['待整理', '低频文件夹', '中频文件夹', '高频文件夹', '典藏区'];
+
 	// 创建"新游戏"Paper的引用
 	const 新游戏PaperRef = createRef<Rect>();
-	
+
 	// 创建"快捷方式"Paper的引用
 	const 快捷方式PaperRefs: ReturnType<typeof createRef<Rect>>[] = [];
 	for (let i = 0; i < 2; i++) {
@@ -255,7 +316,7 @@ export function createMainSubtitles(
 		/>
 	);
 	view.add(运行时长视频);
-	
+
 	// 创建Unity示例视频（初始隐藏，在需要时淡入播放）
 	const unity视频 = (
 		<Video
@@ -269,7 +330,7 @@ export function createMainSubtitles(
 		/>
 	);
 	view.add(unity视频);
-	
+
 	// 创建注册游戏演示视频（初始隐藏，在需要时淡入播放）
 	const 注册游戏视频 = (
 		<Video
@@ -283,7 +344,7 @@ export function createMainSubtitles(
 		/>
 	);
 	view.add(注册游戏视频);
-	
+
 	// 创建拖拽添加游戏演示视频（初始隐藏，在需要时淡入播放）
 	const 拖拽添加游戏视频 = (
 		<Video
@@ -297,7 +358,7 @@ export function createMainSubtitles(
 		/>
 	);
 	view.add(拖拽添加游戏视频);
-	
+
 	// 创建tag添加演示视频（初始隐藏，在需要时淡入播放）
 	const tag添加视频 = (
 		<Video
@@ -311,7 +372,7 @@ export function createMainSubtitles(
 		/>
 	);
 	view.add(tag添加视频);
-	
+
 	// 创建截图演示视频（初始隐藏，在需要时淡入播放）
 	const 截图视频 = (
 		<Video
@@ -325,7 +386,7 @@ export function createMainSubtitles(
 		/>
 	);
 	view.add(截图视频);
-	
+
 	// 创建安全键演示视频（初始隐藏，在需要时淡入播放）
 	const 安全键视频 = (
 		<Video
@@ -339,7 +400,7 @@ export function createMainSubtitles(
 		/>
 	);
 	view.add(安全键视频);
-	
+
 	// 创建音频播放器演示视频（初始隐藏，在需要时淡入播放）
 	const 音频播放器视频 = (
 		<Video
@@ -353,34 +414,10 @@ export function createMainSubtitles(
 		/>
 	);
 	view.add(音频播放器视频);
-	
-	// 创建类型文件夹和标签文件夹的引用
-	const 类型文件夹Ref = createRef<Layout>();
-	const 标签文件夹Ref = createRef<Layout>();
-	
-	// 创建类型子文件夹的引用（JRPG、SLG、ACT）
-	const 类型子文件夹Refs: ReturnType<typeof createRef<FolderComponent>>[] = [];
-	for (let i = 0; i < 3; i++) {
-		类型子文件夹Refs.push(createRef<FolderComponent>());
-	}
-	
-	// 创建标签子文件夹的引用（巫女、天使、3D、像素）
-	const 标签子文件夹Refs: ReturnType<typeof createRef<Layout>>[] = [];
-	for (let i = 0; i < 4; i++) {
-		标签子文件夹Refs.push(createRef<Layout>());
-	}
-	
-	// 创建连线的引用
-	const 中频到类型连线Ref = createRef<Line>();
-	const 中频到标签连线Ref = createRef<Line>();
-	const 类型子文件夹连线Refs: ReturnType<typeof createRef<Line>>[] = [];
-	for (let i = 0; i < 3; i++) {
-		类型子文件夹连线Refs.push(createRef<Line>());
-	}
-	const 标签子文件夹连线Refs: ReturnType<typeof createRef<Line>>[] = [];
-	for (let i = 0; i < 4; i++) {
-		标签子文件夹连线Refs.push(createRef<Line>());
-	}
+
+	// 类型文件夹和标签文件夹现在通过TreeNodeComponent的getNodeRef获取，不再需要单独的ref
+
+	// 类型子文件夹和标签子文件夹现在通过TreeNodeComponent的getNodeRef获取，不再需要单独的ref
 
 
 	return [
@@ -392,7 +429,7 @@ export function createMainSubtitles(
 			}
 		},
 		{ text: '多年来，我一直保持着仓鼠的优良传统' },
-		{ 
+		{
 			text: '————收集资源',
 			callback: function* () {
 				// 使用封装好的函数显示圆形排列的松子
@@ -402,10 +439,10 @@ export function createMainSubtitles(
 				});
 			}
 		},
-		{ 
+		{
 			text: '只是，我喜欢的"种子"，并不是从松树上长出来的',
 			callback: function* () {
-				
+
 			}
 		},
 		{
@@ -496,7 +533,7 @@ export function createMainSubtitles(
 				// 先设置标题位置到顶部（不带动画）
 				const topPos = VideoPostion.topCenter(view);
 				乌云标题文本Ref().position(topPos);
-				
+
 				yield* all(
 					乌云().opacity(0, 1),
 					persistentKeywordsRef().addTitle('1. 数据索引问题'),
@@ -552,7 +589,7 @@ export function createMainSubtitles(
 							fontSize: 32,
 						}}
 						treeLayout={{
-							rootPosition: () => [0, -view.height() / 2 + 200],
+							rootPosition: () => [0, VideoPostion.innerTopCenter(view)[1]],
 						}}
 						zIndex={100}
 					/>
@@ -576,7 +613,8 @@ export function createMainSubtitles(
 				);
 			}
 		},
-		{ text: '并且对已通关的游戏前加上"完"，表明这个游戏已经玩完了' ,
+		{
+			text: '并且对已通关的游戏前加上"完"，表明这个游戏已经玩完了',
 			callback: function* () {
 				// 显示图片（设置 zIndex 使其显示在树的上方，树的 zIndex 是 100）
 				yield* 完IMGRef().show({
@@ -591,13 +629,13 @@ export function createMainSubtitles(
 		{
 			text: "2. 访问频率高的资源找起来太慢",
 		},
-			{
-				text: '例如JRPG和ACT的女主都可能是巫女、魔法少女和女骑士',
-				callback: function* () {
-					// 隐藏"完"图片（淡出）
-					yield* 完IMGRef().hide({ duration: 0.5 });
-					
-					// 使用组件方法批量给 JRPG 节点添加子节点（自动显示）
+		{
+			text: '例如JRPG和ACT的女主都可能是巫女、魔法少女和女骑士',
+			callback: function* () {
+				// 隐藏"完"图片（淡出）
+				yield* 完IMGRef().hide({ duration: 0.5 });
+
+				// 使用组件方法批量给 JRPG 节点添加子节点（自动显示）
 				yield* folderTreeRef().addNodesTo('JRPG', [
 					'巫女',
 					'魔法少女',
@@ -610,8 +648,8 @@ export function createMainSubtitles(
 					'魔法少女',
 					'女骑士',
 				]);
-				}
-			},
+			}
+		},
 		{
 			text: '那么就会导致相似的题材被分散到不同的文件夹中',
 			callback: function* () {
@@ -638,11 +676,11 @@ export function createMainSubtitles(
 		},
 		{
 			text: "喜欢玩氪金游戏的粽子精为女主角的游戏",
-			callback:function*(){
+			callback: function* () {
 				yield* 粽子精IMGRef().show({
 					position: VideoPostion.center(view),
 					duration: 1,
-					zIndex:150
+					zIndex: 150
 				});
 			}
 		},
@@ -675,7 +713,7 @@ export function createMainSubtitles(
 				// 给NV添加多个游戏节点（使用组件方法）
 				yield* folderTreeRef().addNodesTo('NV', [
 					'游戏1',
-					'游戏2',
+					'粽子精',
 					'…………',
 					'游戏999',
 				]);
@@ -690,18 +728,18 @@ export function createMainSubtitles(
 			text: "那么每次想玩的时候，都得从这上百个游戏中去查找",
 		},
 		{ text: '这种方式不仅要求管理者对游戏的文件夹位置和游戏名记忆准确' },
-		{text:"速度也非常低效"},
+		{ text: "速度也非常低效" },
 		{
 			text: "常常导致本来想找《魔男的夜宴》，最后却只能找到《魔男的侵袭》"
 		},
-		{ 
+		{
 			text: '于是某一天，我突然冷静了下来，开始仔细思考这个问题的本质',
 			callback: function* () {
 				// 清除整个树（隐藏并删除所有节点，使用组件方法）
 				yield* folderTreeRef().removeTree();
 			}
 		},
-		{ 
+		{
 			text: '1.高频资源要能一键直达',
 			callback: function* () {
 				// 显示要点文本（两个要点同时显示）
@@ -709,7 +747,7 @@ export function createMainSubtitles(
 			}
 		},
 		{ text: '2.低频资源要能按内容、类型快速检索' },
-		{ 
+		{
 			text: '于是，我发明了一种基于频度的分布式归类法',
 			callback: function* () {
 				// 删除"资源管理的两朵乌云"标题
@@ -718,87 +756,103 @@ export function createMainSubtitles(
 					yield* waitFor(0.1);
 					乌云标题文本Ref().remove();
 				}
-				
+
 				// 清除之前的要点文本
 				yield* all(
-					...要点文本Refs.textRefs.map(textRef => 
+					...要点文本Refs.textRefs.map(textRef =>
 						textRef().opacity(0, 0.5, easeOutCubic)
 					)
 				);
-				
+
 				// 等待淡出动画完成
 				yield* waitFor(0.1);
-				
+
 				// 在中心显示标题
 				yield* 归类法标题文本Ref().showOnCenter();
 			}
 		},
 		//////////////////3.基于频度的分布式归类法///////////////////////////
-		{ 
+		{
 			text: '整体算法类似操作系统的LFU（Least Frequently Used）和C#的GC',
 			callback: function* () {
 				// 将标题移动到顶部
 				yield* 归类法标题文本Ref().moveToTopPosition();
 			}
 		},
-		{ 
+		{
 			text: '我将文件夹分5个大类，待整理、低频文件夹、中频文件夹、高频文件夹、典藏区',
 			callback: function* () {
-				// 创建 5 个独立的 Folder 组件
-				const 文件夹列表 = ['待整理', '低频文件夹', '中频文件夹', '高频文件夹', '典藏区'];
-				const folderWidth = 250;
-				const folderHeight = 200;
 				const folderSpacing = 270;
 				const totalWidth = (文件夹列表.length - 1) * folderSpacing;
 				const startX = -totalWidth / 2;
+				// 创建文件夹树，使用自定义渲染函数返回 FolderComponent
+				const folderRoots = 文件夹列表.map((文件夹名, index) => ({
+					key: `folder_${index}`,
+					label: 文件夹名,
+					render: (node: any, theme: any, position: [number, number] | (() => [number, number]), ref: any) => {
+						const x = startX + index * folderSpacing;
+						return (
+							<FolderComponent
+								ref={ref}
+								folderColor="#FFD700"
+								tabColor="#DAA520"
+								width={170}
+								height={150}
+								tabWidth={80}
+								tabHeight={30}
 
-				// 创建5个Folder组件，横向排列
-				文件夹列表.forEach((文件夹名, index) => {
-					const x = startX + index * folderSpacing;
-					const folderRef = 文件夹FolderRefs[index];
-					
-					view.add(
-						<FolderComponent
-							ref={folderRef}
-							folderColor="#FFD700"
-							tabColor="#DAA520"
-							width={folderWidth}
-							tabWidth={100}
-							tabHeight={30}
-							height={folderHeight}
-							position={[x, VideoPostion.innerTopCenter(view)[1]]}
-							opacity={0}
-						>
-							<Txt
-								text={文件夹名}
-								fontSize={24}
-								fill="#000000"
-								fontFamily="Microsoft YaHei, sans-serif"
-								textAlign="center"
-								fontWeight={600}
-							/>
-						</FolderComponent>
-					);
-				});
+								position={[x, VideoPostion.innerTopCenter(view)[1]]}
+								opacity={0}
+							>
+								<Txt
+									text={文件夹名}
+									fontSize={24}
+									fill="#000000"
+									fontFamily="Microsoft YaHei, sans-serif"
+									textAlign="center"
+									fontWeight={600}
+								/>
+							</FolderComponent>
+						);
+					}
+				}));
 
-				// 等待 Folder 创建完成
+				view.add(
+					<TreeNodeComponent
+						ref={文件夹管理树Ref}
+						refs={文件夹管理树Refs}
+						roots={folderRoots}
+						treeLayout={{
+							rootPosition: () => [0, 0], // 位置由 render 函数控制
+							columnSpacing: folderSpacing,
+						}}
+						zIndex={100}
+					/>
+				);
+
+				// 等待创建完成
 				yield* waitFor(0);
 
-				// 依次淡入所有 Folder
-				for (let i = 0; i < 文件夹FolderRefs.length; i++) {
-					yield* waitFor(i * 0.1);
-					yield* 文件夹FolderRefs[i]().opacity(1, 0.5, easeOutCubic);
+				// 依次淡入所有文件夹
+				for (let i = 0; i < 文件夹列表.length; i++) {
+					const nodeKey = `folder_${i}`;
+					const folderRef = 文件夹管理树Ref().getNodeRef<FolderComponent>(nodeKey);
+					if (folderRef && folderRef()) {
+						yield* waitFor(i * 0.1);
+						yield* (folderRef() as FolderComponent).opacity(1, 0.5, easeOutCubic);
+					}
 				}
 			}
 		},
-		{ 
+		{
 			text: '新创建的游戏，默认进入待整理文件夹',
 			callback: function* () {
 				// 创建"新游戏"Paper，放在待整理文件夹内部
-				const 待整理FolderRef = 文件夹FolderRefs[0]; // 第一个是"待整理"
+				const 待整理FolderRef = 文件夹管理树Ref().getNodeRef<FolderComponent>('folder_0');
+				if (!待整理FolderRef || !待整理FolderRef()) return;
 				// 使用 contentPosition 获取文件夹内容区中心位置
-				const contentPos = 待整理FolderRef().contentPosition();
-				
+				const contentPos = (待整理FolderRef() as FolderComponent).contentPosition();
+
 				view.add(
 					<Paper
 						ref={新游戏PaperRef}
@@ -812,7 +866,7 @@ export function createMainSubtitles(
 						alignItems="center"
 						justifyContent="center"
 						padding={8}
-						zIndex={99}
+						zIndex={209}
 					>
 						<Txt
 							text="新游戏"
@@ -824,429 +878,223 @@ export function createMainSubtitles(
 						/>
 					</Paper>
 				);
-				
+
 				// 等待 Paper 创建完成
 				yield* waitFor(0);
-				
+
 				// 淡入"新游戏"Paper
 				yield* 新游戏PaperRef().opacity(1, 0.6, easeOutCubic);
 			}
 		},
-		{ 
+		{
 			text: '经过1次访问的，移动到低频文件夹',
 			callback: function* () {
 				// 移动到低频文件夹内部（索引1）
-				const 低频FolderRef = 文件夹FolderRefs[1];
+				const 低频FolderRef = 文件夹管理树Ref().getNodeRef<FolderComponent>('folder_1');
+				if (!低频FolderRef || !低频FolderRef()) return;
 				// 使用 contentPosition 获取文件夹内容区中心位置
-				const contentPos = 低频FolderRef().contentPosition();
+				const contentPos = (低频FolderRef() as FolderComponent).contentPosition();
 				yield* 新游戏PaperRef().position(contentPos, 0.8, easeOutCubic);
 			}
 		},
-		{ 
+		{
 			text: '2~3次访问的，移动到中频文件夹。',
 			callback: function* () {
 				// 移动到中频文件夹内部（索引2）
-				const 中频FolderRef = 文件夹FolderRefs[2];
+				const 中频FolderRef = 文件夹管理树Ref().getNodeRef<FolderComponent>('folder_2');
+				if (!中频FolderRef || !中频FolderRef()) return;
 				// 使用 contentPosition 获取文件夹内容区中心位置
-				const contentPos = 中频FolderRef().contentPosition();
+				const contentPos = (中频FolderRef() as FolderComponent).contentPosition();
 				yield* 新游戏PaperRef().position(contentPos, 0.8, easeOutCubic);
 			}
 		},
 		{
 			text: '中频文件夹内，包含类型文件夹和标签文件夹',
 			callback: function* () {
-				// 获取中频文件夹的位置
-				const 中频FolderRef = 文件夹FolderRefs[2];
-				const 中频Position = 中频FolderRef().position();
-				
-				// 创建类型文件夹和标签文件夹，在中频文件夹下方横向排列
-				const 子文件夹间距 = 200;
-				const 类型文件夹X = 中频Position.x - 子文件夹间距 / 2;
-				const 标签文件夹X = 中频Position.x + 子文件夹间距 / 2;
-				const 子文件夹Y = 中频Position.y + 280; // 在中频文件夹下方
-				
-				// 创建类型文件夹
-				view.add(
-					<FolderComponent
-						ref={类型文件夹Ref}
-						folderColor="#4CAF50"
-						tabColor="#2E7D32"
-						width={180}
-						height={150}
-						tabWidth={80}
-						tabHeight={25}
-						position={[类型文件夹X, 子文件夹Y]}
-						opacity={0}
-					>
-						<Txt
-							text="类型文件夹"
-							fontSize={20}
-							fill="#000000"
-							fontFamily="Microsoft YaHei, sans-serif"
-							textAlign="center"
-							fontWeight={600}
-						/>
-					</FolderComponent>
-				);
-				
-				// 创建标签文件夹
-				view.add(
-					<FolderComponent
-						ref={标签文件夹Ref}
-						folderColor="#2196F3"
-						tabColor="#1565C0"
-						width={180}
-						height={150}
-						tabWidth={80}
-						tabHeight={25}
-						position={[标签文件夹X, 子文件夹Y]}
-						opacity={0}
-					>
-						<Txt
-							text="标签文件夹"
-							fontSize={20}
-							fill="#000000"
-							fontFamily="Microsoft YaHei, sans-serif"
-							textAlign="center"
-							fontWeight={600}
-						/>
-					</FolderComponent>
-				);
-				
-				// 等待文件夹创建完成
-				yield* waitFor(0);
-				
-				// 创建中频文件夹到类型文件夹的连线
-				const 中频Folder = 中频FolderRef();
-				const 类型Folder = 类型文件夹Ref();
-				const offset = 60;
-				
-				view.add(
-					<Line
-						ref={中频到类型连线Ref}
-						lineWidth={8}
-						stroke="#666666"
-						radius={8}
-						startOffset={0}
-						endOffset={80}
-						endArrow
-						end={0}
-						opacity={0}
-						zIndex={-1}
-						points={[
-							() => {
-								return 中频Folder.bottom();
-					
-							},
-							() => {
-								const pos = 中频Folder.position();
-								const size = 中频Folder.size();
-								return [pos.x, pos.y + size.height / 2 + offset];
-							},
-							() => {
-								const 中频Pos = 中频Folder.position();
-								const 中频Size = 中频Folder.size();
-								const 类型Pos = 类型Folder.position();
-								return [类型Pos.x, 中频Pos.y + 中频Size.height / 2 + offset];
-							},
-							() => {
-								const pos = 类型Folder.position();
-								const size = 类型Folder.size();
-								return [pos.x, pos.y - size.height / 2];
-							},
-						]}
-					/>
-				);
-				
-				// 创建中频文件夹到标签文件夹的连线
-				const 标签Folder = 标签文件夹Ref();
-				
-				view.add(
-					<Line
-						ref={中频到标签连线Ref}
-						lineWidth={8}
-						stroke="#666666"
-						radius={8}
-						startOffset={10}
-						endOffset={80}
-						endArrow
-						end={0}
-						opacity={0}
-						zIndex={-1}
-						points={[
-							() => {
-								const pos = 中频Folder.position();
-								const size = 中频Folder.size();
-								return [pos.x, pos.y + size.height / 2];
-							},
-							() => {
-								const pos = 中频Folder.position();
-								const size = 中频Folder.size();
-								return [pos.x, pos.y + size.height / 2 + offset];
-							},
-							() => {
-								const 中频Pos = 中频Folder.position();
-								const 中频Size = 中频Folder.size();
-								const 标签Pos = 标签Folder.position();
-								return [标签Pos.x, 中频Pos.y + 中频Size.height / 2 + offset];
-							},
-							() => {
-								const pos = 标签Folder.position();
-								const size = 标签Folder.size();
-								return [pos.x, pos.y - size.height / 2];
-							},
-						]}
-					/>
-				);
-				
-				// 等待连线创建完成
-				yield* waitFor(0);
-				
-				// 同时淡入类型文件夹、标签文件夹和连线
-				yield* all(
-					类型文件夹Ref().opacity(1, 0.6, easeOutCubic),
-					标签文件夹Ref().opacity(1, 0.6, easeOutCubic),
-					中频到类型连线Ref().opacity(1, 0.6, easeOutCubic),
-					中频到类型连线Ref().end(1, 0.6, easeOutCubic),
-					中频到标签连线Ref().opacity(1, 0.6, easeOutCubic),
-					中频到标签连线Ref().end(1, 0.6, easeOutCubic)
+				// 使用组件方法动态添加子节点到中频文件夹（folder_2）
+				const childrenNodes: Array<{ key?: string, label: string, render?: NodeRenderer }> = [
+					{
+						key: 'folder_2_类型文件夹',
+						label: '类型文件夹',
+						render: (node: any, theme: any, position: [number, number] | (() => [number, number]), ref: any) => {
+							return (
+								<FolderComponent
+									ref={ref}
+									folderColor="#4CAF50"
+									tabColor="#2E7D32"
+									width={180}
+									height={150}
+									tabWidth={80}
+									tabHeight={25}
+									position={typeof position === 'function' ? position() : position}
+									opacity={0}
+								>
+									<Txt
+										text="类型文件夹"
+										fontSize={20}
+										fill="#000000"
+										fontFamily="Microsoft YaHei, sans-serif"
+										textAlign="center"
+										fontWeight={600}
+									/>
+								</FolderComponent>
+							);
+						}
+					},
+					{
+						key: 'folder_2_标签文件夹',
+						label: '标签文件夹',
+						render: (node: any, theme: any, position: [number, number] | (() => [number, number]), ref: any) => {
+							return (
+								<FolderComponent
+									ref={ref}
+									folderColor="#2196F3"
+									tabColor="#1565C0"
+									width={180}
+									height={150}
+									tabWidth={80}
+									tabHeight={25}
+									position={typeof position === 'function' ? position() : position}
+									opacity={0}
+								>
+									<Txt
+										text="标签文件夹"
+										fontSize={20}
+										fill="#000000"
+										fontFamily="Microsoft YaHei, sans-serif"
+										textAlign="center"
+										fontWeight={600}
+									/>
+								</FolderComponent>
+							);
+						}
+					}
+				];
+				yield* 文件夹管理树Ref().addNodesTo(
+					'folder_2',
+					childrenNodes,
+					{
+						childSpacing: 600,  // 子节点之间的水平间距
+						childVerticalOffset: 300,  // 子节点相对于父节点的垂直偏移
+					}
 				);
 			}
 		},
 		{
 			text: '类型就是上文所提到的游戏类型，例如JRPG、SLG、ACT等',
 			callback: function* () {
-				// 获取类型文件夹的位置
-				const 类型文件夹Position = 类型文件夹Ref().position();
-				
-				// 创建类型子文件夹：JRPG、SLG、ACT
+				// 使用组件方法动态添加子节点到类型文件夹
 				const 类型子文件夹列表 = ['JRPG', 'SLG', 'ACT'];
-				const 类型子文件夹间距 = 150;
-				const 类型子文件夹总宽度 = (类型子文件夹列表.length - 1) * 类型子文件夹间距;
-				const 类型子文件夹起始X = 类型文件夹Position.x - 类型子文件夹总宽度 ;//想要改x的偏移就改这里哦~~
-				const 类型子文件夹Y = 类型文件夹Position.y + 250; // 在类型文件夹下方
-				
-				类型子文件夹列表.forEach((文件夹名, index) => {
-					const x = 类型子文件夹起始X + index * 类型子文件夹间距;
-					const folderRef = 类型子文件夹Refs[index];
-					
-					view.add(
-						<FolderComponent
-							ref={folderRef}
-							folderColor="#81C784"
-							tabColor="#66BB6A"
-							width={120}
-							height={120}
-							tabWidth={60}
-							tabHeight={20}
-							position={[x, 类型子文件夹Y]}
-							opacity={0}
-						>
-							<Txt
-								text={文件夹名}
-								fontSize={18}
-								fill="#000000"
-								fontFamily="Microsoft YaHei, sans-serif"
-								textAlign="center"
-								fontWeight={600}
-							/>
-						</FolderComponent>
-					);
-				});
-				
-				// 等待子文件夹创建完成
-				yield* waitFor(0);
-				
-				// 创建类型文件夹到子文件夹的连线
-				const 类型Folder = 类型文件夹Ref();
-				const 类型子文件夹Offset = 60;
-				
-				类型子文件夹列表.forEach((文件夹名, index) => {
-					const childFolder = 类型子文件夹Refs[index];
-					const lineRef = 类型子文件夹连线Refs[index];
-					
-					view.add(
-						<Line
-							ref={lineRef}
-							lineWidth={6}
-							stroke="#666666"
-							radius={8}
-							startOffset={10}
-							endOffset={80}
-							endArrow
-							end={0}
-							opacity={0}
-							zIndex={-1}
-							points={[
-								() => {
-									const pos = 类型Folder.position();
-									const size = 类型Folder.size();
-									return [pos.x, pos.y + size.height / 2];
-								},
-								() => {
-									const pos = 类型Folder.position();
-									const size = 类型Folder.size();
-									return [pos.x, pos.y + size.height / 2 + 类型子文件夹Offset];
-								},
-								() => {
-									const 类型Pos = 类型Folder.position();
-									const 类型Size = 类型Folder.size();
-									const 子Pos = childFolder().position();
-									return [子Pos.x, 类型Pos.y + 类型Size.height / 2 + 类型子文件夹Offset];
-								},
-								() => {
-									const pos = childFolder().position();
-									const size = childFolder().size();
-									return [pos.x, pos.y - size.height / 2];
-								},
-							]}
-						/>
-					);
-				});
-				
-				// 等待创建完成
-				yield* waitFor(0);
-				
-				// 依次淡入类型子文件夹和连线
-				for (let i = 0; i < 类型子文件夹Refs.length; i++) {
-					yield* waitFor(i * 0.1);
-					yield* all(
-						类型子文件夹Refs[i]().opacity(1, 0.5, easeOutCubic),
-						类型子文件夹连线Refs[i]().opacity(1, 0.5, easeOutCubic),
-						类型子文件夹连线Refs[i]().end(1, 0.5, easeOutCubic)
-					);
-				}
+				const childrenNodes: Array<{ key?: string, label: string, render?: NodeRenderer }> = 类型子文件夹列表.map((文件夹名) => ({
+					key: `folder_2_类型文件夹_${文件夹名}`,
+					label: 文件夹名,
+					render: (node: any, theme: any, position: [number, number] | (() => [number, number]), ref: any) => {
+						return (
+							<FolderComponent
+								ref={ref}
+								folderColor="#81C784"
+								tabColor="#66BB6A"
+								width={120}
+								height={120}
+								tabWidth={60}
+								tabHeight={20}
+								position={typeof position === 'function' ? position() : position}
+								opacity={0}
+							>
+								<Txt
+									text={文件夹名}
+									fontSize={18}
+									fill="#000000"
+									fontFamily="Microsoft YaHei, sans-serif"
+									textAlign="center"
+									fontWeight={600}
+								/>
+							</FolderComponent>
+						);
+					}
+				}));
+
+				yield* 文件夹管理树Ref().addNodesTo(
+					'folder_2_类型文件夹',
+					childrenNodes,
+					{
+						childSpacing: 150,  // 子节点之间的水平间距
+						childVerticalOffset: 250,  // 子节点相对于父节点的垂直偏移
+						childHorizontalOffset: 0,  // 水平偏移，使子节点左对齐
+					}
+				);
 			}
 		},
 		{
 			text: '标签文件夹则是根据游戏内容、题材、主角、风格等分类的文件夹',
 			callback: function* () {
-				// 获取标签文件夹的位置
-				const 标签文件夹Position = 标签文件夹Ref().position();
-				
-				// 创建标签子文件夹：巫女、天使、3D、像素
+				// 使用组件方法动态添加子节点到标签文件夹
 				const 标签子文件夹列表 = ['巫女', '天使', '3D', '像素'];
-				const 标签子文件夹间距 = 120;
-				const 标签子文件夹总宽度 = (标签子文件夹列表.length - 1) * 标签子文件夹间距;
-				const 标签子文件夹起始X = 标签文件夹Position.x ;
-				const 标签子文件夹Y = 标签文件夹Position.y + 250; // 在标签文件夹下方
-				
-				标签子文件夹列表.forEach((文件夹名, index) => {
-					const x = 标签子文件夹起始X + index * 标签子文件夹间距;
-					const folderRef = 标签子文件夹Refs[index];
-					
-					view.add(
-						<FolderComponent
-							ref={folderRef}
-							folderColor="#64B5F6"
-							tabColor="#42A5F5"
-							width={100}
-							height={120}
-							tabWidth={50}
-							tabHeight={20}
-							position={[x, 标签子文件夹Y]}
-							opacity={0}
-						>
-							<Txt
-								text={文件夹名}
-								fontSize={16}
-								fill="#000000"
-								fontFamily="Microsoft YaHei, sans-serif"
-								textAlign="center"
-								fontWeight={600}
-							/>
-						</FolderComponent>
-					);
-				});
-				
-				// 等待子文件夹创建完成
-				yield* waitFor(0);
-				
-				// 创建标签文件夹到子文件夹的连线
-				const 标签Folder = 标签文件夹Ref();
-				const 标签子文件夹Offset = 60;
-				
-				标签子文件夹列表.forEach((文件夹名, index) => {
-					const childFolder = 标签子文件夹Refs[index];
-					const lineRef = 标签子文件夹连线Refs[index];
-					
-					view.add(
-						<Line
-							ref={lineRef}
-							lineWidth={6}
-							stroke="#666666"
-							radius={8}
-							startOffset={10}
-							endOffset={80}
-							endArrow
-							end={0}
-							opacity={0}
-							zIndex={-1}
-							points={[
-								() => {
-									const pos = 标签Folder.position();
-									const size = 标签Folder.size();
-									return [pos.x, pos.y + size.height / 2];
-								},
-								() => {
-									const pos = 标签Folder.position();
-									const size = 标签Folder.size();
-									return [pos.x, pos.y + size.height / 2 + 标签子文件夹Offset];
-								},
-								() => {
-									const 标签Pos = 标签Folder.position();
-									const 标签Size = 标签Folder.size();
-									const 子Pos = childFolder().position();
-									return [子Pos.x, 标签Pos.y + 标签Size.height / 2 + 标签子文件夹Offset];
-								},
-								() => {
-									const pos = childFolder().position();
-									const size = childFolder().size();
-									return [pos.x, pos.y - size.height / 2];
-								},
-							]}
-						/>
-					);
-				});
-				
-				// 等待连线创建完成
-				yield* waitFor(0);
-				
-				// 依次淡入标签子文件夹和连线
-				for (let i = 0; i < 标签子文件夹Refs.length; i++) {
-					yield* waitFor(i * 0.1);
-					yield* all(
-						标签子文件夹Refs[i]().opacity(1, 0.5, easeOutCubic),
-						标签子文件夹连线Refs[i]().opacity(1, 0.5, easeOutCubic),
-						标签子文件夹连线Refs[i]().end(1, 0.5, easeOutCubic)
-					);
-				}
+				const childrenNodes: Array<{ key?: string, label: string, render?: NodeRenderer }> = 标签子文件夹列表.map((文件夹名) => ({
+					key: `folder_2_标签文件夹_${文件夹名}`,
+					label: 文件夹名,
+					render: (node: any, theme: any, position: [number, number] | (() => [number, number]), ref: any) => {
+						return (
+							<FolderComponent
+								ref={ref}
+								folderColor="#64B5F6"
+								tabColor="#42A5F5"
+								width={100}
+								height={120}
+								tabWidth={50}
+								tabHeight={20}
+								position={typeof position === 'function' ? position() : position}
+								opacity={0}
+							>
+								<Txt
+									text={文件夹名}
+									fontSize={16}
+									fill="#000000"
+									fontFamily="Microsoft YaHei, sans-serif"
+									textAlign="center"
+									fontWeight={600}
+								/>
+							</FolderComponent>
+						);
+					}
+				}));
+
+				yield* 文件夹管理树Ref().addNodesTo(
+					'folder_2_标签文件夹',
+					childrenNodes,
+					{
+						childSpacing: 120,  // 子节点之间的水平间距
+						childVerticalOffset: 250,  // 子节点相对于父节点的垂直偏移
+					}
+				);
 			}
 		},
 		{ text: '例如巫女、天使、3D、像素等' },
 		{
-			text:"之后就可以将资源移动到对应的类型文件夹中",
+			text: "之后就可以将资源移动到对应的类型文件夹中",
 			callback: function* () {
-				// 移动到JRPG文件夹内部（类型子文件夹Refs[0]）
-				const JRPGFolderRef = 类型子文件夹Refs[0]; // JRPG是第一个
+				// 移动到JRPG文件夹内部
+				const JRPGFolderRef = 文件夹管理树Ref().getNodeRef<FolderComponent>('folder_2_类型文件夹_JRPG');
+				if (!JRPGFolderRef || !JRPGFolderRef()) return;
 				// 使用 contentPosition 获取文件夹内容区中心位置
-				const contentPos = JRPGFolderRef().contentPosition();
+				const contentPos = (JRPGFolderRef() as FolderComponent).contentPosition();
 				yield* 新游戏PaperRef().position(contentPos, 0.8, easeOutCubic);
 			}
 		},
 		{
-			text:"同时将资源的快捷方式保存到标签文件夹中",
+			text: "同时将资源的快捷方式保存到标签文件夹中",
 			callback: function* () {
 				// 获取"新游戏"Paper的当前位置作为初始位置
 				const 新游戏Position = 新游戏PaperRef().position();
-				
+
 				// 获取目标文件夹位置
-				const 巫女FolderRef = 标签子文件夹Refs[0]; // 巫女是第一个
-				const 天使FolderRef = 标签子文件夹Refs[1]; // 天使是第二个
-				
-				const 巫女Position = 巫女FolderRef().position();
-				const 天使Position = 天使FolderRef().position();
-				
+				const 巫女FolderRef = 文件夹管理树Ref().getNodeRef<FolderComponent>('folder_2_标签文件夹_巫女');
+				const 天使FolderRef = 文件夹管理树Ref().getNodeRef<FolderComponent>('folder_2_标签文件夹_天使');
+				if (!巫女FolderRef || !巫女FolderRef() || !天使FolderRef || !天使FolderRef()) return;
+
+				const 巫女Position = (巫女FolderRef() as FolderComponent).contentPosition();
+				const 天使Position = (天使FolderRef() as FolderComponent).contentPosition();
+
 				// 创建巫女的快捷方式Paper（初始位置在"新游戏"Paper上）
 				view.add(
 					<Paper
@@ -1261,6 +1109,7 @@ export function createMainSubtitles(
 						alignItems="center"
 						justifyContent="center"
 						padding={8}
+						zIndex={200}
 					>
 						<Txt
 							text="快捷方式"
@@ -1272,7 +1121,7 @@ export function createMainSubtitles(
 						/>
 					</Paper>
 				);
-				
+
 				// 创建天使的快捷方式Paper（初始位置在"新游戏"Paper上）
 				view.add(
 					<Paper
@@ -1287,6 +1136,7 @@ export function createMainSubtitles(
 						alignItems="center"
 						justifyContent="center"
 						padding={8}
+						zIndex={200}
 					>
 						<Txt
 							text="快捷方式"
@@ -1298,40 +1148,42 @@ export function createMainSubtitles(
 						/>
 					</Paper>
 				);
-				
+
 				// 等待Paper创建完成
 				yield* waitFor(0);
-				
+
 				// 同时淡入两个快捷方式Paper，然后移动到目标文件夹
 				yield* all(
 					快捷方式PaperRefs[0]().opacity(1, 0.6, easeOutCubic),
 					快捷方式PaperRefs[1]().opacity(1, 0.6, easeOutCubic)
 				);
-				
+
 				// 移动到目标文件夹
 				yield* all(
-					快捷方式PaperRefs[0]().position([巫女Position.x, 巫女Position.y], 0.8, easeOutCubic),
-					快捷方式PaperRefs[1]().position([天使Position.x, 天使Position.y], 0.8, easeOutCubic)
+					快捷方式PaperRefs[0]().position(巫女Position, 0.8, easeOutCubic),
+					快捷方式PaperRefs[1]().position(天使Position, 0.8, easeOutCubic)
 				);
 			}
 		},
-		{ 
+		{
 			text: '3次以上访问的，可以把快捷方式移动到高频文件夹',
 			callback: function* () {
 				// 移动到高频文件夹内部（索引3）
-				const 高频FolderRef = 文件夹FolderRefs[3];
+				const 高频FolderRef = 文件夹管理树Ref().getNodeRef<FolderComponent>('folder_3');
+				if (!高频FolderRef || !高频FolderRef()) return;
 				// 使用 contentPosition 获取文件夹内容区中心位置
-				const contentPos = 高频FolderRef().contentPosition();
+				const contentPos = (高频FolderRef() as FolderComponent).contentPosition();
 				yield* 新游戏PaperRef().position(contentPos, 0.8, easeOutCubic);
 			}
 		},
-		{ 
+		{
 			text: '如果资源质量极其优秀，可以直接移动到典藏区，永不降级',
 			callback: function* () {
 				// 移动到典藏区内部（索引4）
-				const 典藏区FolderRef = 文件夹FolderRefs[4];
+				const 典藏区FolderRef = 文件夹管理树Ref().getNodeRef<FolderComponent>('folder_4');
+				if (!典藏区FolderRef || !典藏区FolderRef()) return;
 				// 使用 contentPosition 获取文件夹内容区中心位置
-				const contentPos = 典藏区FolderRef().contentPosition();
+				const contentPos = (典藏区FolderRef() as FolderComponent).contentPosition();
 				yield* 新游戏PaperRef().position(contentPos, 0.8, easeOutCubic);
 			}
 		},
@@ -1344,61 +1196,36 @@ export function createMainSubtitles(
 		{ text: '在这两个模式的配合下，不仅可以完成常见的资源分类，也可以记录该资源是否访问过' },
 		{ text: '而且还可以标注重要资源以及低质量资源，进行额外的备份或者删除' },
 		{ text: '但是，仍然不够完美' },
-		{ 
+		{
 			text: '这两个模式其实蕴含了2个前提',
 			callback: function* () {
 				// 删除所有文件夹、连线、Paper等树结构
-				
+
 				// 1. 淡出并删除5个主要文件夹
 				const 文件夹淡出动画: ThreadGenerator[] = [];
-				for (let i = 0; i < 文件夹FolderRefs.length; i++) {
-					if (文件夹FolderRefs[i]()) {
-						文件夹淡出动画.push(文件夹FolderRefs[i]().opacity(0, 0.5, easeOutCubic));
+				for (let i = 0; i < 文件夹列表.length; i++) {
+					const folderRef = 文件夹管理树Ref().getNodeRef<FolderComponent>(`folder_${i}`);
+					if (folderRef && folderRef()) {
+						文件夹淡出动画.push((folderRef() as FolderComponent).opacity(0, 0.5, easeOutCubic));
 					}
 				}
-				
+
 				// 2. 淡出并删除类型文件夹和标签文件夹
 				const 类型标签淡出动画: ThreadGenerator[] = [];
-				if (类型文件夹Ref()) {
-					类型标签淡出动画.push(类型文件夹Ref().opacity(0, 0.5, easeOutCubic));
+				const 类型文件夹Ref = 文件夹管理树Ref().getNodeRef<FolderComponent>('folder_2_类型文件夹');
+				const 标签文件夹Ref = 文件夹管理树Ref().getNodeRef<FolderComponent>('folder_2_标签文件夹');
+				if (类型文件夹Ref && 类型文件夹Ref()) {
+					类型标签淡出动画.push((类型文件夹Ref() as FolderComponent).opacity(0, 0.5, easeOutCubic));
 				}
-				if (标签文件夹Ref()) {
-					类型标签淡出动画.push(标签文件夹Ref().opacity(0, 0.5, easeOutCubic));
+				if (标签文件夹Ref && 标签文件夹Ref()) {
+					类型标签淡出动画.push((标签文件夹Ref() as FolderComponent).opacity(0, 0.5, easeOutCubic));
 				}
-				
-				// 3. 淡出并删除类型子文件夹
-				for (let i = 0; i < 类型子文件夹Refs.length; i++) {
-					if (类型子文件夹Refs[i]()) {
-						类型标签淡出动画.push(类型子文件夹Refs[i]().opacity(0, 0.5, easeOutCubic));
-					}
-				}
-				
-				// 4. 淡出并删除标签子文件夹
-				for (let i = 0; i < 标签子文件夹Refs.length; i++) {
-					if (标签子文件夹Refs[i]()) {
-						类型标签淡出动画.push(标签子文件夹Refs[i]().opacity(0, 0.5, easeOutCubic));
-					}
-				}
-				
-				// 5. 淡出并删除所有连线
+
+				// 3. 类型子文件夹和标签子文件夹由TreeNodeComponent管理，会在removeTree时自动删除
+
+				// 4. 连线由TreeNodeComponent自动管理，会在removeTree时自动删除
 				const 连线淡出动画: ThreadGenerator[] = [];
-				if (中频到类型连线Ref()) {
-					连线淡出动画.push(中频到类型连线Ref().opacity(0, 0.5, easeOutCubic));
-				}
-				if (中频到标签连线Ref()) {
-					连线淡出动画.push(中频到标签连线Ref().opacity(0, 0.5, easeOutCubic));
-				}
-				for (let i = 0; i < 类型子文件夹连线Refs.length; i++) {
-					if (类型子文件夹连线Refs[i]()) {
-						连线淡出动画.push(类型子文件夹连线Refs[i]().opacity(0, 0.5, easeOutCubic));
-					}
-				}
-				for (let i = 0; i < 标签子文件夹连线Refs.length; i++) {
-					if (标签子文件夹连线Refs[i]()) {
-						连线淡出动画.push(标签子文件夹连线Refs[i]().opacity(0, 0.5, easeOutCubic));
-					}
-				}
-				
+
 				// 6. 淡出并删除新游戏Paper和快捷方式Paper
 				const paper淡出动画: ThreadGenerator[] = [];
 				if (新游戏PaperRef()) {
@@ -1409,7 +1236,7 @@ export function createMainSubtitles(
 						paper淡出动画.push(快捷方式PaperRefs[i]().opacity(0, 0.5, easeOutCubic));
 					}
 				}
-				
+
 				// 同时执行所有淡出动画
 				yield* all(
 					...文件夹淡出动画,
@@ -1417,57 +1244,17 @@ export function createMainSubtitles(
 					...连线淡出动画,
 					...paper淡出动画
 				);
-				
+
 				// 等待动画完成后删除所有元素
 				yield* waitFor(0.1);
-				
-				// 删除所有文件夹
-				for (let i = 0; i < 文件夹FolderRefs.length; i++) {
-					if (文件夹FolderRefs[i]()) {
-						文件夹FolderRefs[i]().remove();
-					}
+
+				// 删除文件夹管理树
+				if (文件夹管理树Ref()) {
+					yield* 文件夹管理树Ref().removeTree();
 				}
-				
-				// 删除类型文件夹和标签文件夹
-				if (类型文件夹Ref()) {
-					类型文件夹Ref().remove();
-				}
-				if (标签文件夹Ref()) {
-					标签文件夹Ref().remove();
-				}
-				
-				// 删除类型子文件夹
-				for (let i = 0; i < 类型子文件夹Refs.length; i++) {
-					if (类型子文件夹Refs[i]()) {
-						类型子文件夹Refs[i]().remove();
-					}
-				}
-				
-				// 删除标签子文件夹
-				for (let i = 0; i < 标签子文件夹Refs.length; i++) {
-					if (标签子文件夹Refs[i]()) {
-						标签子文件夹Refs[i]().remove();
-					}
-				}
-				
-				// 删除所有连线
-				if (中频到类型连线Ref()) {
-					中频到类型连线Ref().remove();
-				}
-				if (中频到标签连线Ref()) {
-					中频到标签连线Ref().remove();
-				}
-				for (let i = 0; i < 类型子文件夹连线Refs.length; i++) {
-					if (类型子文件夹连线Refs[i]()) {
-						类型子文件夹连线Refs[i]().remove();
-					}
-				}
-				for (let i = 0; i < 标签子文件夹连线Refs.length; i++) {
-					if (标签子文件夹连线Refs[i]()) {
-						标签子文件夹连线Refs[i]().remove();
-					}
-				}
-				
+
+				// 类型文件夹、标签文件夹、类型子文件夹、标签子文件夹和所有连线都由TreeNodeComponent管理，会在removeTree时自动删除
+
 				// 删除Paper
 				if (新游戏PaperRef()) {
 					新游戏PaperRef().remove();
@@ -1479,13 +1266,13 @@ export function createMainSubtitles(
 				}
 			}
 		},
-		{ 
+		{
 			text: '第一，管理者得不偷懒而且不犯错地执行规则',
 			callback: function* () {
 				yield* persistentKeywordsRef().addTitle('第一，管理者得不偷懒而且不犯错地执行规则');
 			}
 		},
-		{ 
+		{
 			text: '第二，所有的游戏都是孤立的系统',
 			callback: function* () {
 				yield* persistentKeywordsRef().addTitle('第二，所有的游戏都是孤立的系统');
@@ -1495,10 +1282,12 @@ export function createMainSubtitles(
 		{ text: '复制快捷方式到每个标签文件夹，非常费时费力' },
 		{ text: '而且想要新加标签极其极其困难，' },
 		{ text: '因为你不知道当前资源的快捷方式被哪些文件夹引用了' },
-		{ text: '其次，你的归类必须完美无措，' ,callback: function* () {
-			yield* persistentKeywordsRef().clear();
-		}},
-		{ 
+		{
+			text: '其次，你的归类必须完美无措，', callback: function* () {
+				yield* persistentKeywordsRef().clear();
+			}
+		},
+		{
 			text: '一旦想要重新移动某个资源的位置，就会导致所有的快捷方式全部失效，极其折磨',
 			callback: function* () {
 				yield* moveAndShow(快捷方式失效Img, view, VideoPostion.center(view), 1);
@@ -1531,9 +1320,10 @@ export function createMainSubtitles(
 							fontSize: 32,
 						}}
 						treeLayout={{
-							rootPosition: () => VideoPostion.topCenter(view),
+							rootPosition: () => VideoPostion.innerTopCenter(view),
 							columnSpacing: 230, // 子节点之间的水平间距（x轴方向）
 							rowSpacing: 200,    // 行间距（y轴方向）
+
 						}}
 						zIndex={100}
 					/>
@@ -1548,7 +1338,7 @@ export function createMainSubtitles(
 			callback: function* () {
 				// 先添加"柚子社"节点到根节点
 				yield* developerTreeRef().addNodeTo('root', '柚子社');
-				
+
 				// 然后把三个游戏节点添加到"柚子社"节点下
 				yield* developerTreeRef().addNodesTo('柚子社', [
 					'千万莲华',
@@ -1557,7 +1347,7 @@ export function createMainSubtitles(
 				]);
 			}
 		},
-		{ text: '那么从惯性来讲，这些游戏需要归类到“袖子社”这个文件夹中' },
+		{ text: '那么按照思维惯性，这些游戏应该归类到“袖子社”这个文件夹中' },
 		{ text: '但是非常不巧，这些游戏每一部的类型都不一样，' },
 		{
 			text: '那么按照算法，我需要把它归类到各自的类型中',
@@ -1567,7 +1357,7 @@ export function createMainSubtitles(
 					'NV',
 					'SRPG',
 					'ARPG',
-				],{
+				], {
 					childSpacing: 200,
 				});
 			}
@@ -1584,14 +1374,14 @@ export function createMainSubtitles(
 			}
 		},
 		{
-			text: '要想建立开发商合集，还得手动一个个将快捷方式复制过来，烦不胜烦',
+			text: '要想为袖子社建立合集，还得一个个手动地复制快捷方式，烦不胜烦',
 			callback: function* () {
 				// 为"柚子社"节点添加三个游戏的快捷方式
 				yield* developerTreeRef().addNodesTo('柚子社', [
 					'千万莲华\n快捷方式',
 					'亚特兰斯\n快捷方式',
 					'瑟尔达传说\n快捷方式',
-				],{
+				], {
 					childHorizontalOffset: -220,
 					childSpacing: 200,
 				});
@@ -1609,24 +1399,25 @@ export function createMainSubtitles(
 			}
 		},
 		{ text: '不仅比打黑工做人工标注都累，还会导致根目录越来越庞大' },
-		{ text: '因此，我意识到windows本地的文件夹仅能做到单一分类存储', 
+		{
+			text: '因此，我意识到windows本地的文件夹是不适合做标签管理和数据记录的',
 			callback: function* () {
 				// 清空所有页面元素
-				
+
 				// 1. 清除前提文本（使用 PersistentKeywords 组件）
 				yield* persistentKeywordsRef().clear();
-				
+
 				// 2. 清除归类法标题文本
 				if (归类法标题文本Ref && 归类法标题文本Ref()) {
 					yield* 归类法标题文本Ref().opacity(0, 0.5, easeOutCubic);
 					yield* waitFor(0.1);
 					归类法标题文本Ref().remove();
 				}
-				
+
 				// 3. 清除要点文本
 				if (要点文本Refs && 要点文本Refs.textRefs && 要点文本Refs.textRefs.length > 0) {
 					yield* all(
-						...要点文本Refs.textRefs.map(textRef => 
+						...要点文本Refs.textRefs.map(textRef =>
 							textRef().opacity(0, 0.5, easeOutCubic)
 						)
 					);
@@ -1644,10 +1435,7 @@ export function createMainSubtitles(
 			}
 		},
 		{
-			text:"而无法做到索引、额外数据记录等功能",
-		},
-		{
-			text:"因此，在一次冷静的思考后，我制作了\"绿色资源管理器\"",
+			text: "所以，在一次冷静的思考后，我制作了\"绿色资源管理器\"",
 			callback: function* () {
 				// 创建"绿色资源管理器"图片并移动到屏幕中心
 				绿色资源管理器Img = createImage(view, '/imgs/绿色资源管理器.png', {
@@ -1656,26 +1444,30 @@ export function createMainSubtitles(
 				});
 				yield* moveAndShow(绿色资源管理器Img, view, VideoPostion.center(view), 0.8);
 			}
-		
+
 		},
 
 		//////////////////4.绿色资源管理器介绍///////////////////////////
 		{ text: '绿色管理器是基于本地文件索引的资源管理应用' },
 		{
-			text:"采用tag分类法组织和管理资源",
+			text: "采用tag分类法组织和管理资源",
 		},
 		{
-			text :"用人话说就是它本身不存储任何资源",
+			text: "用人话说就是资源还是存到本地文件夹的",
 		},
 		{
-			text:"，而是通过保存资源的地址来管理资源",
+			text: "但是tag索引和数据记录由我帮你完成",
 		},
 		{
-			text:"管理时，会将所有的信息抽象为tag",
+			text: "你只用随意把资源放到本地，做最低限度的管理即可",
 		},
-		{ text: '开发商是tag，发行商是tag，内容、题材、主角、风格——统统都是tag' },
-		{ text: '万物皆可标签化管理' },
-		{ text: '我们以《unity》这个游戏为例' ,
+		{
+			text: "所有的复杂步骤都由管理器帮你完成",
+		},
+		// { text: '开发商是tag，发行商是tag，内容、题材、主角、风格——统统都是tag' },
+		// { text: '万物皆可标签化管理' },
+		{
+			text: '我们以《unity》这个游戏为例',
 			callback: function* () {
 				// 隐藏"绿色资源管理器"图片
 				if (绿色资源管理器Img && 绿色资源管理器Img()) {
@@ -1691,13 +1483,13 @@ export function createMainSubtitles(
 			callback: function* () {
 				// 显示并播放注册游戏演示视频
 				const video = 注册游戏视频Ref();
-				
+
 				// 先显示视频（淡入）
 				yield* video.opacity(1, 0.5);
-				
+
 				// 等待一小段时间确保视频元素已准备好
 				yield* waitFor(0.1);
-				
+
 				// 播放视频
 				video.play();
 			}
@@ -1712,21 +1504,22 @@ export function createMainSubtitles(
 					yield* waitFor(0.1);
 					oldVideo.remove();
 				}
-				
+
 				// 显示并播放拖拽添加游戏演示视频
 				const newVideo = 拖拽添加游戏视频Ref();
-				
+
 				// 先显示视频（淡入）
 				yield* newVideo.opacity(1, 0.5);
-				
+
 				// 等待一小段时间确保视频元素已准备好
 				yield* waitFor(0.1);
-				
+
 				// 播放视频
 				newVideo.play();
 			}
 		},
-		{ text: '注册成功后，单击游戏卡的封面图进入游戏详情面板' ,
+		{
+			text: '注册成功后，单击游戏卡的封面图进入游戏详情面板',
 			callback: function* () {
 				// 淡出并删除之前的拖拽添加游戏视频
 				const oldVideo = 拖拽添加游戏视频Ref();
@@ -1735,53 +1528,51 @@ export function createMainSubtitles(
 					yield* waitFor(0.1);
 					oldVideo.remove();
 				}
-				
+
 				// 显示并播放tag添加演示视频
 				const newVideo = tag添加视频Ref();
-				
+
 				// 先显示视频（淡入）
 				yield* newVideo.opacity(1, 0.5);
-				
+
 				// 等待一小段时间确保视频元素已准备好
 				yield* waitFor(0.1);
-				
+
 				// 播放视频
 				newVideo.play();
 			}
 		},
 		{
 			text: '在面板中就可以编辑tag了',
-			
+
 		},
 		{ text: '例如unity的tag可以是游戏引擎、心理恐怖和开放世界' },
 		{ text: '要注意，输入完成后需要回车来添加tag' },
 		{
-			text:"添加完成后，点击保存修改以完成编辑",
-			callback: function* () {
-				// 淡出并删除tag添加视频
-				const video = tag添加视频Ref();
-				if (video && video.opacity() > 0) {
-					yield* video.opacity(0, 0.5);
-					yield* waitFor(0.1);
-					video.remove();
-				}
-			}
-		},
-		{ text: '之后查找《unity》这个游戏，便只需点击"心理恐怖"tag即可查找到' ,
-		callback: function* () {
-			// 显示单一tag筛选图片
-			yield* moveAndShow(单一tag筛选Img, view, VideoPostion.center(view), 1);
-		}
+			text: "添加完成后，点击保存修改以完成编辑"
 		},
 		{
-			text:"不过同时你也会发现，有心理恐怖的游戏不止有unity",
-		
+			text: '之后查找《unity》这个游戏，便只需点击"心理恐怖"tag即可查找到',
+			callback: function* () {
+
+				yield* tag添加视频Ref().opacity(0, 0.5);
+				yield* waitFor(0.1);
+				tag添加视频Ref().remove();
+
+				// 显示单一tag筛选图片
+				yield* moveAndShow(单一tag筛选Img, view, VideoPostion.center(view), 1);
+			}
+		},
+		{
+			text: "不过同时你也会发现，有心理恐怖的游戏不止有unity",
+
 		},
 		{ text: '因此随着资源越来越多，如果只支持一个tag的索引' },
 		{
-			text:"还是可能导致资源过多，查找困难",
+			text: "还是可能导致资源过多，查找困难",
 		},
-		{ text: '因此我设计了多选功能，你同时选择多个tag来逐步缩小查找范围' ,
+		{
+			text: '因此我设计了多选功能，你同时选择多个tag来逐步缩小查找范围',
 			callback: function* () {
 				// 淡出并删除之前的单一tag筛选图片
 				if (单一tag筛选Img && 单一tag筛选Img().opacity() > 0) {
@@ -1789,31 +1580,38 @@ export function createMainSubtitles(
 					yield* waitFor(0.1);
 					单一tag筛选Img().remove();
 				}
-				
+
 				// 显示多tag筛选图片
 				yield* moveAndShow(多tag筛选Img, view, VideoPostion.center(view), 1);
 			}
 
 		},
 		{ text: '尤其是在你拥有超大量资源而信息比较模糊时，多个tag索引可以大大提高查找效率' },
-		{ text: '而本地文件的组织方式，则可以基于之前的类型分类法' },
+		{ text: '通过这种方式就可以彻底解放本地文件的组织方式了' },
 		{
-			text:"不过理论上随便放也可以，不管怎么样乱放，都不影响检索和查找",
-			
+			text: "本地文件不管怎么样乱放，都不影响管理器的检索和查找",
+
 		},
-		{ text: '比如我现在的游戏就非常混乱，' },
+		{ text: '比如我现在的管理方式，' },
 		{
-			text:"有的放在了固态上，有的放在了机械上，有的放在了nas上",
+			text: "我将高频访问的游戏，以及大型游戏放到了固态硬盘",
 		},
-		{ text: '还有的在百度的下载目录内。存储的路径非常繁杂' },
-		{ text: '不过我完全不用担心找不到，因为我使用绿色资源管理器后，可以统一管理' },
-		{ text: '如果想找到存储目录，也可以右键快速打开文件夹' },
-		{ text: '这样就完美解决了文件查找问题，大大降低了文件整理和归类的复杂度' },
-		{ text: '但这样是不够的' },
+		{
+			text: "将中频访问的游戏放到了大容量机械硬盘",
+		},
+		{
+			text: "将低频访问的游戏放到了nas，进行冷备份",
+		},
+		{ text: '不过我完全不用担心找不到这些资源' },
+		{
+			text: "使用了绿色资源管理器后，所有的资源都可以统一管理",
+		},
+		{ text: '大大降低了文件整理和归类的复杂度' },
+		{ text: '这样就解决了第一朵乌云——数据索引问题' },
 		//////////////////5.游戏时长统计和截图功能///////////////////////////
-		{ text: '作为一名专业仓鼠，我非常重视我所有的数据记录' },
+		{ text: '接下来我们将解决第二朵乌云——数据统计问题' },
 		{
-			text: '仅仅找到资源可不够，我需要知道这个游戏我是否浏览过？我玩过几次？总时长多少？',
+			text: '我作为资深的仓鼠党，我非常需要知道这个游戏我是否浏览过？',
 			callback: function* () {
 				// 淡出并删除之前的多tag筛选图片
 				if (多tag筛选Img && 多tag筛选Img().opacity() > 0) {
@@ -1821,17 +1619,20 @@ export function createMainSubtitles(
 					yield* waitFor(0.1);
 					多tag筛选Img().remove();
 				}
-				
+
 				// 显示游戏统计问题文本
-				yield* fadeInNodes(游戏统计问题文本Refs.textRefs,1);
+				yield* fadeInNodes(游戏统计问题文本Refs.textRefs, 1);
 			}
 		},
 		{
-			text: '于是，我实现了一套类似于steam的运行机制',
-			
+			text: '我玩过几次？玩了多长时间？',
 		},
-		
-		{ text: '你可以直接在详情面板中启动游戏',
+		{
+			text: '于是，我实现了一套类似于steam的运行机制',
+		},
+
+		{
+			text: '你可以直接在详情面板中启动游戏',
 			callback: function* () {
 				// 淡出并删除之前的游戏统计问题文本
 				for (const textRef of 游戏统计问题文本Refs.textRefs) {
@@ -1841,26 +1642,26 @@ export function createMainSubtitles(
 						textRef().remove();
 					}
 				}
-				
+
 				// 显示并播放运行时长演示视频
 				const video = 运行时长视频Ref();
 				video.play();
 				yield* video.opacity(1, 0.5);
 			},
-		 },
+		},
 		{
-			text:"也可以直接点击游戏卡启动游戏"
+			text: "也可以直接点击游戏卡启动游戏"
 		},
 
 		{
-			text:"在你享受游戏的时候"
+			text: "在你享受游戏的时候"
 		},
-		
+
 		{
-			text:"管理器会实时记录运行时长"
+			text: "管理器会实时记录运行时长"
 		},
 		{ text: '同时浏览次数、第一次运行时长、第一次入库时间、总时长等信息都会被额外记录' },
-		{ 
+		{
 			text: '而既然要抄steam，那么当然要贯彻到底',
 			callback: function* () {
 				// 清除运行时长演示视频
@@ -1877,72 +1678,137 @@ export function createMainSubtitles(
 			text: '本管理器还顺便实现了动态截图功能',
 			callback: function* () {
 				// 淡出并删除之前的运行时长视频
-				const oldVideo = 运行时长视频Ref();
-				if (oldVideo && oldVideo.opacity() > 0) {
-					yield* oldVideo.opacity(0, 0.5);
-					yield* waitFor(0.1);
-					oldVideo.remove();
-				}
-				
-				// 显示并播放截图演示视频
-				const newVideo = 截图视频Ref();
-				
-				// 先显示视频（淡入）
-				yield* newVideo.opacity(1, 0.5);
-				
-				// 等待一小段时间确保视频元素已准备好
+
+				yield* 运行时长视频Ref().opacity(0, 0.5);
 				yield* waitFor(0.1);
-				
-				// 播放视频
-				newVideo.play();
+				运行时长视频Ref().remove();
+
+
+
+				yield* 截图视频Ref().opacity(1, 0.5);
+				yield* waitFor(0.1);
+				截图视频Ref().play();
 			}
 		},
 		{ text: '在游戏运行时，按下ctrl+f12就可以快速截图，' },
 		{
-			text:"之后右键该游戏卡，就可以打开截图文件夹了"
+			text: "之后右键该游戏卡，就可以打开截图文件夹了"
 		},
 		{ text: '再也不用担心丢失游戏的精彩瞬间！' },
 		{ text: '什么！你说很多galgame的ctrl是快进键？！会造成冲突？' },
-		{ text: '当然，作为专业的仓鼠，我早已预料到这个情况' },
-		{ text: '因此，你可以随时在设置中更改快捷键。将其改为你顺手的键位' },
-		{ text: '同时，你也可以使用游戏内的截图快速作为游戏的封面' },
-		{ text: '但是光记录也没有用啊？' },
-		{ text: '还记得我刚才说的高频文件夹、中频文件夹吗？' },
-		{ text: '没错，记录时长的主要目的就是为了方便索引' },
-		{ text: '所以我加入了排序功能' },
-		{ text: '可以按照运行时间、最后游玩顺序、添加时间等信息进行排序' },
-		{ text: '这样既可以快速找到你常玩的游戏，也可以找到最近添加的游戏进行管理' },
-		{ text: '好的，管理器的冰山一角已经介绍完了，接下来才是重点功能' },
-		{ text: '想必此时，各位早已看到左侧的列表了' },
-		{ text: '是的，绿色资源管理器不仅可以管理应用也可以管理图片、视频、小说、网站、音频等资源' },
+		{ text: '当然，作为资深的仓鼠，我早已预料到这个情况' },
 		{
-			text: '而且和游戏不同，我为所有的资源都实现了内部播放器',
+			text: '因此，你可以随时在设置中更改快捷键。将其改为你顺手的键位',
 			callback: function* () {
-				// 显示两张图片浏览器图片，并排显示
-				yield* all(
-					moveAndShow(图片浏览器Img, view, VideoPostion.innerLeftCenter(view), 1),
-					moveAndShow(图片浏览器2Img, view, VideoPostion.innerRightCenter(view), 1)
-				);
+
+				yield* 截图视频Ref().opacity(0, 0.5);
+				yield* waitFor(0.1);
+				截图视频Ref().remove();
+
+
+				// 显示截图键位修改图片
+				yield* moveAndShow(截图键位修改Img, view, VideoPostion.center(view), 1);
 			}
 		},
-		{ text: '再也不用被某某看图王、某某图片查看器折磨了' },
-		{ text: '只要点击漫画卡的播放按钮即可享受漫画浏览！没有任何广告！没有任何收费项！全程不联网！' },
-		{ text: '小说也是一样的，只要点击播放按钮就可以享受丝滑的阅读体验' },
-		{ text: '而且我还为小说的阅读器增加了配置项，各位不妨自定义成自己喜欢的形状' },
+		{ text: '同时，你也可以使用游戏内的截图快速作为游戏的封面' },
+
+		{ text: '还记得我刚才说的高频文件夹、中频文件夹吗？' },
+		{
+			text: '没错，我参考之前的设计，加入了排序功能',
+			callback: function* () {
+				// 隐藏并删除截图键位修改图片
+				if (截图键位修改Img()) {
+					yield* 截图键位修改Img().opacity(0, 0.5, easeOutCubic);
+					yield* waitFor(0.1);
+					截图键位修改Img().remove();
+				}
+
+				// 显示排序方式图片
+				yield* moveAndShow(排序方式Img, view, VideoPostion.center(view), 1);
+			}
+		},
+		{ text: '可以按照运行时间、最后游玩顺序、游玩次数、添加时间等信息进行排序' },
+		{ text: '这样既可以快速找到你常玩的游戏，也可以找到最近添加的游戏进行管理' },
+
+		{
+			text: '好的，管理器的冰山一角已经介绍完了，接下来才是重点功能',
+			callback: function* () {
+				// 删除截图键位修改图片（如果还存在）
+
+				排序方式Img().remove();
+
+			}
+		},
+		{ text: '想必此时，各位早已看到左侧的列表了' },
+		{ text: '是的，绿色资源管理器不仅可以管理应用' },
+		{
+			text: '也可以管理图片、视频、小说、网站、音频等资源'
+		},
+		{
+			text: '而且为了方便起见，我为所有的资源都实现了内部播放器',
+			callback: function* () {
+
+				yield* moveAndShow(图片浏览器Img, view, VideoPostion.center(view), 1)
+
+
+			}
+		},
+		{
+			text: '再也不用被某某看图王、某某图片查看器折磨了',
+			callback: function* () {
+				// 删除图片浏览器图片
+				yield* 图片浏览器Img().opacity(0, 0.5);
+				yield* waitFor(0.1);
+				图片浏览器Img().remove();
+				yield* moveAndShow(图片浏览器2Img, view, VideoPostion.center(view), 1);
+			}
+		},
+		{
+			text: '管理器内没有任何广告！没有任何收费项！全程不联网！',
+			callback: function* () {
+				// 删除图片浏览器图片
+				yield* hideAndRemove(图片浏览器2Img);
+				yield* moveAndShow(小说阅读器Img, view, VideoPostion.center(view), 1);
+			}
+		},
+		{
+			text: '而且我还为小说的阅读器增加了配置项，各位不妨自定义成自己喜欢的形状',
+			callback: function* () {
+				// 删除小说阅读器图片
+				if (小说阅读器Img()) {
+					yield* 小说阅读器Img().opacity(0, 0.5, easeOutCubic);
+					yield* waitFor(0.1);
+					小说阅读器Img().remove();
+				}
+
+				// 显示小说阅读器2图片
+				yield* moveAndShow(小说阅读器2Img, view, VideoPostion.center(view), 1);
+			}
+		},
 		{ text: '而音频播放器则是重量级的重量级' },
-		{ text: '不知道各位有没有这个习惯，我在看小说和漫画的时候喜欢听一些音声' },
+		{
+			text: '不知道各位是否和我一样，在看小说和漫画的时候喜欢听一些音声',
+			callback: function* () {
+				// 删除小说阅读器2图片
+
+				yield* 小说阅读器2Img().opacity(0, 0.5, easeOutCubic);
+				yield* waitFor(0.1);
+				小说阅读器2Img().remove();
+
+			}
+		},
 		{
 			text: '没错，音频播放器可以挂到后台播放，你可以自定义播放列表',
 			callback: function* () {
 				// 显示并播放音频播放器演示视频
 				const video = 音频播放器视频Ref();
-				
+
 				// 先显示视频（淡入）
 				yield* video.opacity(1, 0.5);
-				
+
 				// 等待一小段时间确保视频元素已准备好
 				yield* waitFor(0.1);
-				
+
 				// 播放视频
 				video.play();
 			}
@@ -1950,17 +1816,66 @@ export function createMainSubtitles(
 		{ text: '在阅读的时候享受视觉和听觉的双重体验！' },
 		//////////////////6.伪装模式、安全键、多存档机制///////////////////////////
 		{ text: '这时恐怕有人要问了，"哎呀，你这个软件搞个这么大的封面，很容易社死的"' },
-		{ text: '当然，作为专业的仓鼠，我早已预料到了这种情况' },
-		{ text: '你可以随时在设置中开启伪装模式' },
-		{ text: '开启后，软件内所有的资源封面图都会变成各个大学课程的截图' },
+		{
+			text: '当然，作为专业的仓鼠，我早已预料到了这种情况',
+			callback: function* () {
+				// 清除音频播放器视频
+				const video = 音频播放器视频Ref();
+				if (video && video.opacity() > 0) {
+					yield* video.opacity(0, 0.5, easeOutCubic);
+					yield* waitFor(0.1);
+					video.pause();
+					video.remove();
+				}
+			}
+		},
+		{
+			text: '你可以随时在设置中开启伪装模式',
+			callback: function* () {
+				// 显示伪装模式图片
+				yield* moveAndShow(伪装模式Img, view, VideoPostion.center(view), 1);
+			}
+
+		},
+		{
+			text: '开启后，软件内所有的资源封面图都会变成各个大学课程的截图',
+			callback: function* () {
+				// 隐藏并删除伪装模式图片
+				yield* hideAndRemove(伪装模式Img);
+				// 显示伪装模式展示图片
+				yield* moveAndShow(伪装模式展示Img, view, VideoPostion.center(view), 1);
+			}
+		},
 		{ text: '而名称和tag都会变成专业课的名称' },
-		{ text: '当然，这些截图和名称支持自定义，你可以在根目录的disguise文件夹自由修改' },
-		{ text: '比如改造成这样：' },
+		{
+			text: '当然，这些截图和名称支持自定义，',
+			callback: function* () {
+				// 隐藏并删除伪装模式展示图片
+				yield* hideAndRemove(伪装模式展示Img);
+				// 显示伪装模式自由修改图片
+				yield* moveAndShow(伪装模式自由修改Img, view, VideoPostion.center(view), 1);
+			}
+		},
+		{
+			text: '你可以在根目录的disguise文件夹自由修改成你的形状',
+		},
+		{
+			text: '比如这样：',
+			callback: function* () {
+				// 隐藏并删除伪装模式自由修改图片
+				yield* hideAndRemove(伪装模式自由修改Img);
+				// 显示伪装模式_戒色吧图片
+				yield* moveAndShow(伪装模式_戒色吧Img, view, VideoPostion.center(view), 1);
+			}
+		},
 		{ text: '时刻提醒自己再勤劳的机长也有需要休息的一天' },
-		{ 
-			text: '同时，绿色资源管理器还提供了安全键',
+		{ text: "同时，考虑到各位打游戏的时候，可能不想被同居的青梅竹马小萝莉看到" },
+		{
+			text: '因此绿色资源管理器还提供了安全键',
 			callback: function* () {
 				// 创建并显示"安全键"图片
+
+				yield* hideAndRemove(伪装模式_戒色吧Img);
 				安全键Img = createImage(view, '/imgs/安全键.png', {
 					scale: 0.8,
 					initialPosition: () => VideoPostion.bottomCenter(view),
@@ -1978,43 +1893,67 @@ export function createMainSubtitles(
 					安全键Img().remove();
 					安全键Img = null;
 				}
-				
+
 				// 显示并播放安全键演示视频
 				const video = 安全键视频Ref();
-				
+
 				// 先显示视频（淡入）
 				yield* video.opacity(1, 0.5);
-				
+
 				// 等待一小段时间确保视频元素已准备好
 				yield* waitFor(0.1);
-				
+
 				// 播放视频
 				video.play();
 			}
 		},
 		{ text: '并打开丘维声教授的高等代数课程，' },
 		{
-			text :"放心，我已经帮你跳转到07:46"
+			text: "放心，我已经帮你跳转到07:46"
 		},
 		{ text: '可以更好地伪装自己已经看了一半的感觉' },
 		{ text: '另外，考虑到各位有很多人白天要上学上班，半夜还要忙着拯救世界' },
-		{ text: '因此我为有着多重身份的各位开发了多存档机制' },
+		{
+			text: '因此我为有着多重身份的各位开发了多存档机制',
+			callback: function* () {
+				// 清除安全键视频
+				const video = 安全键视频Ref();
+				if (video && video.opacity() > 0) {
+					yield* video.opacity(0, 0.5, easeOutCubic);
+					yield* waitFor(0.1);
+					video.pause();
+					video.remove();
+				}
+
+				// 显示多存档图片
+				yield* moveAndShow(多存档Img, view, VideoPostion.center(view), 1);
+			}
+		},
 		{ text: '只需要在设置中自定义存档目录就可以切换存档' },
 		{ text: '各个存档完全独立，可以防止你心之怪盗团的身份被泄露出去' },
 
 
+
 		//////////////////7.成就功能和统计功能///////////////////////////
-		{ 
-			text: '最后，为了让各位的仓鼠之路加一些仪式感，我还开发了成就功能和统计功能',
+		{
+			text: '最后，为了让各位的仓鼠之路加一些仪式感，'
+		},
+		{
+			text: "我还开发了成就功能和统计功能",
 			callback: function* () {
+
+				yield* hideAndRemove(多存档Img);
 				// 创建并显示"成就"图片
 				成就Img = createImage(view, '/imgs/成就.png', {
-					scale: 0.8,
+					scale: 0.7,
 					initialPosition: () => VideoPostion.bottomCenter(view),
 				});
 				yield* moveAndShow(成就Img, view, VideoPostion.center(view), 1);
 			}
+
+
 		},
+
 		{
 			text: '你可以在用户界面找到成就页，查看当前的进度',
 			callback: function* () {
@@ -2035,42 +1974,59 @@ export function createMainSubtitles(
 			}
 		},
 		{ text: '目前收录了21个成就，未来预计会不断更新' },
-		{ text: '顺带一提，还有一些隐藏成就哦~需要你探索管理器才能解锁' },
-		{ text: '除此之外管理器也提供了统计功能' },
-		{ text: "不仅可以统计管理器的运行时长，登录时间等数据"},
-		{ text: "还可以生成月报、年报等数据"},
+		{ text: '顺带一提，我还设计了一些隐藏成就' },
+		{ text: '需要各位探索管理器才能解锁' },
+
+		{
+			text: "而统计功能不仅可以统计管理器的运行时长，登录时间等数据",
+			callback: function* () {
+				// 删除成就图片
+				if (成就Img && 成就Img()) {
+					yield* hideAndRemove(成就Img);
+					成就Img = null;
+				}
+
+				// 创建并显示统计页面图片
+				统计页面Img = createImage(view, '/imgs/统计页面.png', {
+					scale: 0.7,
+					initialPosition: () => VideoPostion.bottomCenter(view),
+				});
+				yield* moveAndShow(统计页面Img, view, VideoPostion.center(view), 1);
+			}
+		},
+		{ text: "还可以生成月报、年报等数据" },
 		{ text: '让你的每一寸时光都有意义，有价值' },
-		{ text: '再说下去各位不免厌烦，其余的神秘功能，各位可以在帮助页自行查询' },
-	
-		{ 
+		{
+			text: '再说下去各位不免厌烦，其余的神秘功能，各位可以在帮助页自行查询',
+			callback: function* () {
+				// 删除统计页面图片
+
+				yield* hideAndRemove(统计页面Img);
+
+
+				// 创建并显示帮助页图片
+				帮助页Img = createImage(view, '/imgs/帮助页.png', {
+					scale: 1.1,
+					initialPosition: () => VideoPostion.bottomCenter(view),
+				});
+				yield* moveAndShow(帮助页Img, view, VideoPostion.center(view), 1);
+			}
+		},
+
+		{
 			text: '最后我需要声明',
 			callback: function* () {
-				// 清除安全键和成就图片
-				const 清除动画: ThreadGenerator[] = [];
-				
-				if (安全键Img && 安全键Img()) {
-					清除动画.push(安全键Img().opacity(0, 0.5, easeOutCubic));
-				}
-				if (成就Img && 成就Img()) {
-					清除动画.push(成就Img().opacity(0, 0.5, easeOutCubic));
-				}
-				
-				if (清除动画.length > 0) {
-					yield* all(...清除动画);
-					yield* waitFor(0.1);
-					
-					if (安全键Img && 安全键Img()) {
-						安全键Img().remove();
-						安全键Img = null;
-					}
-					if (成就Img && 成就Img()) {
-						成就Img().remove();
-						成就Img = null;
-					}
-				}
-				
+
+				// 隐藏帮助页图片
+				yield* hideAndRemove(帮助页Img);
+
+
+			}
+		},
+		{
+			text: '本绿色资源管理器完全免费、安全、开源', callback: function* () {
 				// 显示文字："完全免费、安全、开源、无任何广告、全程不需要互联网"
-				const 声明文本 = createTexts(view, ['完全免费、安全、开源、无任何广告、全程不需要互联网'], {
+				声明文本 = createTexts(view, ['完全免费、安全、开源、无任何广告、全程不需要互联网'], {
 					centerPosition: () => VideoPostion.center(view),
 					fontSize: 56,
 					color: '#000000',
@@ -2080,12 +2036,30 @@ export function createMainSubtitles(
 				yield* fadeInNodes(声明文本.textRefs);
 			}
 		},
-		{ text: '本绿色资源管理器完全免费、安全、开源、无任何广告、全程不需要互联网，是真正的绿色资源管理器' },
+		{ text: "无任何广告、全程不需要互联网，是真正的绿色资源管理器" },
 		{ text: '如果各位喜欢这个管理器，不妨为我的视频点个赞、转发一下' },
 		{ text: '但是无需三连，现在的管理器仍处于半成品' },
-		{ text:"我深知管理器还有很多重要功能仍不齐全"},
 		{
-			text:"比如数据刮削、自动解压、云存档",
+			text: "我深知管理器还有很多重要功能仍不齐全", callback: function* () {
+				// 隐藏并删除声明文本
+				if (声明文本 && 声明文本.textRefs) {
+					yield* all(
+						...声明文本.textRefs.map(textRef =>
+							textRef().opacity(0, 0.5, easeOutCubic)
+						)
+					);
+					yield* waitFor(0.1);
+					声明文本.textRefs.forEach(textRef => {
+						if (textRef()) {
+							textRef().remove();
+						}
+					});
+					声明文本 = null;
+				}
+			}
+		},
+		{
+			text: "比如数据刮削、自动解压、云存档",
 			callback: function* () {
 				// 依次显示功能列表文本（前三个）
 				for (let i = 0; i < 3; i++) {
@@ -2095,7 +2069,7 @@ export function createMainSubtitles(
 			}
 		},
 		{
-			text:"自动转区、报错修复、自动翻译等无数功能仍需开发",
+			text: "自动转区、游戏报错分析、自动翻译等无数功能仍需开发",
 			callback: function* () {
 				// 依次显示功能列表文本（后三个）
 				for (let i = 3; i < 6; i++) {
@@ -2104,12 +2078,32 @@ export function createMainSubtitles(
 				}
 			}
 		},
-		{text:"但是请各位稍安勿躁"},
+		{ text: "但是请各位稍安勿躁" },
 		{
-			text:"在它成为各位心中完美的资源管理器之前,我会不断更新的"
+			text: "在它成为各位心中完美的资源管理器之前，我会不断更新的"
 		},
-		{ text: '这个是本管理器的qq群，如果有什么意见和建议，欢迎进群讨论！' },
-		{ text: '那么，各位，我们下次再见' }
+		{
+			text: '这个是本管理器的qq群，如果有什么意见和建议，欢迎进群讨论！',
+			callback: function* () {
+				// 隐藏功能列表文本Refs
+				yield* all(
+					...功能列表文本Refs.textRefs.map(textRef =>
+						textRef().opacity(0, 0.5, easeOutCubic)
+					)
+				);
+				// 隐藏帮助页图片
+				yield* hideAndRemove(帮助页Img);
+				// 创建并显示QQ群图片
+				qq群Img = createImage(view, '/imgs/qq群图片.jpg', {
+					scale: 0.5,
+					initialPosition: () => VideoPostion.bottomCenter(view),
+				});
+				yield* moveAndShow(qq群Img, view, VideoPostion.center(view), 1);
+			}
+		},
+		{
+			text: '那么，各位，我们下次再见'
+		}
 	];
 }
 

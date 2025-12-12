@@ -52,12 +52,12 @@
       <!-- 简介部分 -->
       <section v-if="activeSection === 'intro'" class="content-section">
         <div class="section-header">
-          <h1>🏠 关于 Butter Manager（黄油管理器）</h1>
+          <h1>🏠 关于GreenResourcesManager（绿色资源管理器）</h1>
           <p class="section-subtitle">您的个人多媒体资源管理器</p>
         </div>
         <div class="intro-content">
           <DetailCard title="🎯 项目简介">
-            <p>Butter Manager
+            <p>GreenResourcesManager（绿色资源管理器）
               是一个专为仓鼠症用户设计的绿色多媒体资源管理器。它非常善于帮助您管理大量且类型丰富复杂的媒体文件，包括游戏、图片、视频、小说、网站和音频文件。您不用再依赖于windows本地的原生管理方式，而是可以享受更加自由和便捷的管理体验。
             </p>
           </DetailCard>
@@ -115,7 +115,7 @@
                   <h4>QQ</h4>
                   <p>吹水用，以及有什么建议可以在这里反馈</p>
                   <span @click="openExternalLink('https://qm.qq.com/q/SSh1pEXHaw')" class="external-link">
-                    点击链接加入群聊【ButterManager 客服群】：https://qm.qq.com/q/SSh1pEXHaw
+                    点击链接加入群聊【绿色资源管理器 客服群】：https://qm.qq.com/q/SSh1pEXHaw
                   </span>
                 </div>
               </div>
@@ -186,7 +186,7 @@
           <p class="section-subtitle">实际上也可以管应用。我的unity和PS等软件就是用这个管的。还挺好用的</p>
         </div>
         <p class="module-intro">
-          游戏管理模块是黄油管理器的核心功能之一。它实现了一套类似steam的软件管理系统。帮助您管理各种类型的游戏文件，并帮您获得游戏的附加信息。游玩时模块会自动记录您游戏的时长、运行次数、最后游玩时间等统计信息。并提供了一个功能强大的截图工具，让您在游戏中可以快速截图。
+          游戏管理模块是绿色资源管理器的核心功能之一。它实现了一套类似steam的软件管理系统。帮助您管理各种类型的游戏文件，并帮您获得游戏的附加信息。游玩时模块会自动记录您游戏的时长、运行次数、最后游玩时间等统计信息。并提供了一个功能强大的截图工具，让您在游戏中可以快速截图。
         </p>
         <div class="module-detail">
           <DetailCard title="🎯 添加游戏">
