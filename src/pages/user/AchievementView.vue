@@ -324,6 +324,16 @@ const allAchievementDefinitions: Achievement[] = [
     hiddenTip: '也许点击哪里之后可以解锁？'
   }),
 
+  new Achievement({
+    id: 'nocturne',
+    title: '夜曲',
+    description: '在半夜1点之后播放音乐',
+    group: 'nocturne',
+    type: new TriggerAchievementType(),
+    isHidden: true,
+    hiddenTip: '唯歌声与月夜相伴...'
+  }),
+
 ]
 
 const achievementDefinitionMap = new Map(

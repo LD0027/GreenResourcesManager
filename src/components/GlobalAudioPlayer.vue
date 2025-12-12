@@ -136,6 +136,8 @@
 </template>
 
 <script>
+import { unlockAchievement } from '../pages/user/AchievementView.vue'
+
 export default {
   name: 'GlobalAudioPlayer',
   data() {
@@ -255,6 +257,9 @@ export default {
         this.isPlaying = true
         
         console.log('✅ 音频播放成功:', this.currentAudio.name)
+        
+        // 检查是否在半夜1点之后播放音乐，解锁"夜曲"成就
+        this.checkNocturneAchievement()
         
       } catch (error) {
         console.error('加载或播放音频失败:', error)
@@ -583,6 +588,24 @@ export default {
         window.electronAPI.showNotification(title, message)
       } else if (Notification.permission === 'granted') {
         new Notification(title, { body: message })
+      }
+    },
+    
+    // 检查并解锁"夜曲"成就
+    async checkNocturneAchievement() {
+      try {
+        const now = new Date()
+        const currentHour = now.getHours()
+        
+        // 检查是否在半夜1点之后（1:00-23:59，即凌晨1点到晚上11点59分）
+        // 通常"半夜1点之后"指的是凌晨1点到早上某个时间，这里理解为1:00-6:00
+        // 但用户说"半夜1点之后"，更可能是1:00-5:59（凌晨1点到早上6点前）
+        if (currentHour >= 1 && currentHour < 6) {
+          console.log('🌙 检测到在半夜1点之后播放音乐，尝试解锁"夜曲"成就')
+          await unlockAchievement('nocturne')
+        }
+      } catch (error) {
+        console.error('检查夜曲成就失败:', error)
       }
     }
   },
