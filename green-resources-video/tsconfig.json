@@ -3,6 +3,14 @@
   "include": ["src"],
   "compilerOptions": {
     "jsx": "preserve",
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    }
   }
 }

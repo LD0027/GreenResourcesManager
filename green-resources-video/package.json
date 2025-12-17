@@ -5,16 +5,23 @@
   "scripts": {
     "start": "vite",
     "serve": "vite",
-    "build": "tsc && vite build"
+    "build": "tsc && vite build",
+    "audio:generate": "tsx src/audio-maker.ts",
+    "audio:example": "tsx src/audio-maker-example.ts",
+    "audio:main": "tsx src/generate-main-audio.ts",
+    "text:generate": "tsx src/generate-text.ts"
   },
   "dependencies": {
-    "@motion-canvas/core": "^3.17.2",
     "@motion-canvas/2d": "^3.17.2",
+    "@motion-canvas/core": "^3.17.2",
     "@motion-canvas/ffmpeg": "^1.1.0"
   },
   "devDependencies": {
     "@motion-canvas/ui": "^3.17.2",
     "@motion-canvas/vite-plugin": "^3.17.2",
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.2.2",
     "vite": "^4.0.0"
   }

@@ -163,7 +163,7 @@ export function createMainSubtitles(
 	// 创建功能列表文本
 	const 功能列表文本Refs = createTexts(view, ['数据刮削', '自动解压', '云存档', '自动转区', '游戏报错分析', '自动翻译'], {
 		centerPosition: () => VideoPostion.center(view),
-		fontSize: 48,
+		fontSize: 48, 
 		color: '#000000',
 		spacing: 60,
 		direction: 'column',
@@ -306,6 +306,12 @@ export function createMainSubtitles(
 		快捷方式PaperRefs.push(createRef<Rect>());
 	}
 
+	// 创建高频文件夹快捷方式的引用
+	const 高频快捷方式PaperRef = createRef<Rect>();
+
+	// 创建典藏区副本Paper的引用
+	const 典藏区副本PaperRef = createRef<Rect>();
+
 	// 创建运行时长演示视频（初始隐藏，在需要时淡入播放）
 	const 运行时长视频 = (
 		<Video
@@ -423,17 +429,17 @@ export function createMainSubtitles(
 	// 类型子文件夹和标签子文件夹现在通过TreeNodeComponent的getNodeRef获取，不再需要单独的ref
 
 
-	return [
+	const subtitles: VideoScript[] = [
 		{
 			//////////////////1.引子///////////////////////////
-			text: '我是一只资深的仓鼠',
+			text: '我是一只仓鼠',
 			callback: function* () {
 				yield* moveAndShow(imgRef, view, VideoPostion.center(view), 1);
 			}
 		},
 		{ text: '多年来，我一直保持着仓鼠的优良传统' },
 		{
-			text: '————收集资源',
+			text: '————收集种子',
 			callback: function* () {
 				// 使用封装好的函数显示圆形排列的松子
 				yield* showCircleImages(松子圆形.imageRefs, 松子圆形.positions, view, {
@@ -443,7 +449,7 @@ export function createMainSubtitles(
 			}
 		},
 		{
-			text: '只是，我喜欢的"种子"，并不是从松树上长出来的',
+			text: '只不过，我喜欢的"种子"，并不是从树上长出来的',
 			callback: function* () {
 
 			}
@@ -464,7 +470,7 @@ export function createMainSubtitles(
 			}
 		},
 		{
-			text: '无论任何类型的资源都会变成我的猎物',
+			text: '无论任何类型的资源都会被我收入囊中',
 			callback: function* () {
 				yield* blackHoleEffect(rightTextsRefs.textRefs, imgRef, 4, 3);
 			}
@@ -733,8 +739,8 @@ export function createMainSubtitles(
 		{
 			text: "那么每次想玩的时候，都得从这上百个游戏中去查找",
 		},
-		{ text: '这种方式不仅要求管理者对游戏的文件夹位置和游戏名记忆准确' },
-		{ text: "速度也非常低效" },
+		{ text: '这种方式不仅速率非常低效' },
+		{ text: "而且还要求管理者对游戏的文件夹位置和游戏名记忆准确" },
 		{
 			text: "常常导致本来想找《魔男的夜宴》，最后却只能找到《魔男的侵袭》"
 		},
@@ -1174,39 +1180,107 @@ export function createMainSubtitles(
 		{
 			text: '3次以上访问的，可以把快捷方式移动到高频文件夹',
 			callback: function* () {
-				// 移动到高频文件夹内部（索引3）
+				// 获取"新游戏"Paper的当前位置作为初始位置
+				const 新游戏Position = 新游戏PaperRef().position();
+
+				// 获取高频文件夹位置
 				const 高频FolderRef = 文件夹管理树Ref().getNodeRef<FolderComponent>('folder_3');
 				if (!高频FolderRef || !高频FolderRef()) return;
-				// 使用 contentPosition 获取文件夹内容区中心位置
-				const contentPos = (高频FolderRef() as FolderComponent).contentPosition();
-				yield* 新游戏PaperRef().position(contentPos, 0.8, easeOutCubic);
+				const 高频Position = (高频FolderRef() as FolderComponent).contentPosition();
+
+				// 创建高频文件夹的快捷方式Paper（初始位置在"新游戏"Paper上）
+				view.add(
+					<Paper
+						ref={高频快捷方式PaperRef}
+						fill="#bbbbbb"
+						width={100}
+						height={80}
+						position={[新游戏Position.x, 新游戏Position.y]}
+						opacity={0}
+						layout
+						direction="column"
+						alignItems="center"
+						justifyContent="center"
+						padding={8}
+						zIndex={200}
+					>
+						<Txt
+							text="快捷方式"
+							fontSize={16}
+							fill="#000000"
+							fontFamily="Microsoft YaHei, sans-serif"
+							textAlign="center"
+							fontWeight={600}
+						/>
+					</Paper>
+				);
+
+				// 等待Paper创建完成
+				yield* waitFor(0);
+
+				// 淡入快捷方式Paper，然后移动到高频文件夹
+				yield* 高频快捷方式PaperRef().opacity(1, 0.6, easeOutCubic);
+				yield* 高频快捷方式PaperRef().position(高频Position, 0.8, easeOutCubic);
 			}
 		},
 		{
-			text: '如果资源质量极其优秀，可以直接移动到典藏区，永不降级',
+			text: '如果资源质量极其优秀，可以直接再复制一份到典藏区，永不降级',
 			callback: function* () {
-				// 移动到典藏区内部（索引4）
+				// 获取"新游戏"Paper的当前位置作为初始位置
+				const 新游戏Position = 新游戏PaperRef().position();
+
+				// 获取典藏区文件夹位置
 				const 典藏区FolderRef = 文件夹管理树Ref().getNodeRef<FolderComponent>('folder_4');
 				if (!典藏区FolderRef || !典藏区FolderRef()) return;
-				// 使用 contentPosition 获取文件夹内容区中心位置
-				const contentPos = (典藏区FolderRef() as FolderComponent).contentPosition();
-				yield* 新游戏PaperRef().position(contentPos, 0.8, easeOutCubic);
+				const 典藏区Position = (典藏区FolderRef() as FolderComponent).contentPosition();
+
+				// 创建典藏区的副本Paper（初始位置在"新游戏"Paper上）
+				view.add(
+					<Paper
+						ref={典藏区副本PaperRef}
+						fill="#bbbbbb"
+						width={100}
+						height={100}
+						position={[新游戏Position.x, 新游戏Position.y]}
+						opacity={0}
+						layout
+						direction="column"
+						alignItems="center"
+						justifyContent="center"
+						padding={8}
+						zIndex={209}
+					>
+						<Txt
+							text="新游戏"
+							fontSize={16}
+							fill="#000000"
+							fontFamily="Microsoft YaHei, sans-serif"
+							textAlign="center"
+							fontWeight={600}
+						/>
+					</Paper>
+				);
+
+				// 等待Paper创建完成
+				yield* waitFor(0);
+
+				// 淡入副本Paper，然后移动到典藏区
+				yield* 典藏区副本PaperRef().opacity(1, 0.6, easeOutCubic);
+				yield* 典藏区副本PaperRef().position(典藏区Position, 0.8, easeOutCubic);
 			}
 		},
-		{ text: '这种管理方式也可以解决备份问题' },
-		{ text: '典藏区需要额外备份' },
-		{ text: '高频文件夹仅仅存储快捷方式，不影响实际资源' },
-		{ text: '中频文件夹，保存原始一份即可' },
-		{ text: '低频文件夹，说明其质量较差，可以被删除' },
 
-		{ text: '在这两个模式的配合下，不仅可以完成常见的资源分类，也可以记录该资源是否访问过' },
-		{ text: '而且还可以标注重要资源以及低质量资源，进行额外的备份或者删除' },
-		{ text: '但是，仍然不够完美' },
+
+		{ text: '在这两个模式的配合下，不仅可以完成常见的资源分类' },
+
+		{ text: '还可以为典藏区提供额外的备份' },
+		{ text: '并标记没玩过的游戏和可能不好玩的低频资源，方便后续删除' },
+
+		{ text: '但是，这种方法仍然不够完美' },
 		{
 			text: '这两个模式其实蕴含了2个前提',
 			callback: function* () {
 				// 删除所有文件夹、连线、Paper等树结构
-
 				// 1. 淡出并删除5个主要文件夹
 				const 文件夹淡出动画: ThreadGenerator[] = [];
 				for (let i = 0; i < 文件夹列表.length; i++) {
@@ -1242,6 +1316,12 @@ export function createMainSubtitles(
 						paper淡出动画.push(快捷方式PaperRefs[i]().opacity(0, 0.5, easeOutCubic));
 					}
 				}
+				if (高频快捷方式PaperRef()) {
+					paper淡出动画.push(高频快捷方式PaperRef().opacity(0, 0.5, easeOutCubic));
+				}
+				if (典藏区副本PaperRef()) {
+					paper淡出动画.push(典藏区副本PaperRef().opacity(0, 0.5, easeOutCubic));
+				}
 
 				// 同时执行所有淡出动画
 				yield* all(
@@ -1269,6 +1349,12 @@ export function createMainSubtitles(
 					if (快捷方式PaperRefs[i]()) {
 						快捷方式PaperRefs[i]().remove();
 					}
+				}
+				if (高频快捷方式PaperRef()) {
+					高频快捷方式PaperRef().remove();
+				}
+				if (典藏区副本PaperRef()) {
+					典藏区副本PaperRef().remove();
 				}
 			}
 		},
@@ -1675,8 +1761,14 @@ export function createMainSubtitles(
 				if (video) {
 					// 淡出视频
 					yield* video.opacity(0, 0.5, easeOutCubic);
-					// 停止播放
-					video.pause();
+					// 等待节点准备好
+					yield* waitFor(0.1);
+					// 直接移除，remove() 会自动停止播放
+					try {
+						video.remove();
+					} catch (e) {
+						// 如果节点还未准备好，忽略错误
+					}
 				}
 			}
 		},
@@ -1702,7 +1794,7 @@ export function createMainSubtitles(
 		},
 		{ text: '再也不用担心丢失游戏的精彩瞬间！' },
 		{ text: '什么！你说很多galgame的ctrl是快进键？！会造成冲突？' },
-		{ text: '当然，作为资深的仓鼠，我早已预料到这个情况' },
+		{ text: '当然了，作为资深的仓鼠，我早已预料到这个情况' },
 		{
 			text: '因此，你可以随时在设置中更改快捷键。将其改为你顺手的键位',
 			callback: function* () {
@@ -1823,15 +1915,20 @@ export function createMainSubtitles(
 		//////////////////6.伪装模式、安全键、多存档机制///////////////////////////
 		{ text: '这时恐怕有人要问了，"哎呀，你这个软件搞个这么大的封面，很容易社死的"' },
 		{
-			text: '当然，作为专业的仓鼠，我早已预料到了这种情况',
+			text: '当然，作为资深的仓鼠，我早已预料到了这种情况',
 			callback: function* () {
 				// 清除音频播放器视频
 				const video = 音频播放器视频Ref();
-				if (video && video.opacity() > 0) {
+				if (video) {
+					// 淡出视频
 					yield* video.opacity(0, 0.5, easeOutCubic);
 					yield* waitFor(0.1);
-					video.pause();
-					video.remove();
+					// 直接移除，remove() 会自动停止播放
+					try {
+						video.remove();
+					} catch (e) {
+						// 如果节点还未准备好，忽略错误
+					}
 				}
 			}
 		},
@@ -1924,11 +2021,16 @@ export function createMainSubtitles(
 			callback: function* () {
 				// 清除安全键视频
 				const video = 安全键视频Ref();
-				if (video && video.opacity() > 0) {
+				if (video) {
+					// 淡出视频
 					yield* video.opacity(0, 0.5, easeOutCubic);
 					yield* waitFor(0.1);
-					video.pause();
-					video.remove();
+					// 直接移除，remove() 会自动停止播放
+					try {
+						video.remove();
+					} catch (e) {
+						// 如果节点还未准备好，忽略错误
+					}
 				}
 
 				// 显示多存档图片
@@ -2111,6 +2213,8 @@ export function createMainSubtitles(
 			text: '那么，各位，我们下次再见'
 		}
 	];
+
+	return subtitles;
 }
 
 
@@ -2118,7 +2222,7 @@ export function createMainSubtitles(
  * 进度条分段配置（基于文本匹配）
  */
 export const segmentConfigs: ProgressSegmentConfig[] = [
-	{ title: '问题提出', startText: '我是一只资深的仓鼠', endText: '而令人遗憾的是', color: '#4CAF50' },
+	{ title: '问题提出', startText: '我是一只仓鼠', endText: '而令人遗憾的是', color: '#4CAF50' },
 	{ title: '传统方法', startText: '而令人遗憾的是', endText: '于是某一天，我突然冷静了下来', color: '#FF9800' },
 	{ title: '解决方案', startText: '于是某一天，我突然冷静了下来', endText: '这两个模式其实蕴含了2个前提', color: '#2196F3' },
 	{ title: '方案缺陷', startText: '这两个模式其实蕴含了2个前提', endText: '所以，在一次冷静的思考后，我制作了"绿色资源管理器"', color: '#9C27B0' },
