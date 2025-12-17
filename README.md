@@ -5,13 +5,13 @@
 
 **一款全能、免费的本地多媒体资源管理器。可以轻松帮您管理游戏、漫画、小说、音乐、网站等资源**
 
-[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/klsdf/GreenResourcesManager) [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE) [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/klsdf/GreenResourcesManager) [![Vue](https://img.shields.io/badge/Vue-3.3.8-4FC08D.svg)](https://vuejs.org/) [![Electron](https://img.shields.io/badge/Electron-27.1.0-47848F.svg)](https://www.electronjs.org/)
+[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/klsdf/GreenResourcesManager) [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange.svg)](LICENSE) [![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://github.com/klsdf/GreenResourcesManager) [![Vue](https://img.shields.io/badge/Vue-3.3.8-4FC08D.svg)](https://vuejs.org/) [![Electron](https://img.shields.io/badge/Electron-27.1.0-47848F.svg)](https://www.electronjs.org/)
 
 
 
-[![Bilibili](https://img.shields.io/badge/bilibili-哔哩哔哩-00A1D6?logo=bilibili)](https://space.bilibili.com/YOUR_BILIBILI_ID) [![QQ群](https://img.shields.io/badge/QQ群-群号-blue?logo=tencent-qq)](https://qm.qq.com/cgi-bin/qm/qr?k=YOUR_QQ_GROUP_KEY) [![帽子社官网](https://img.shields.io/badge/帽子社-官网-orange)](https://YOUR_WEBSITE_URL)
+[![Bilibili](https://img.shields.io/badge/bilibili-哔哩哔哩-00A1D6?logo=bilibili)](https://space.bilibili.com/36163336?spm_id_from=333.1007.0.0) [![QQ群](https://img.shields.io/badge/QQ群-群号-blue?logo=tencent-qq)](https://qm.qq.com/q/16bCL6VeTo) [![帽子社官网](https://img.shields.io/badge/帽子社-官网-orange)](https://hat-soft.top/)
 
-[English](#) | [中文](#)
+[English](README_EN.md) | [中文](#)
 
 
 
