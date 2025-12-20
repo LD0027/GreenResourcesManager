@@ -171,7 +171,6 @@ export default {
 
     // 拖拽相关函数（需要在组件实例化后设置）
     let showPathUpdateDialogFn: (info: { existingGame: any; newPath: string; newFileName: string }) => void = () => {}
-    let extractGameNameFromPathFn: (filePath: string) => string = () => ''
     let addGameFn: (game: any) => Promise<void> = async () => {}
 
     // 使用拖拽 composable（延迟初始化，因为需要访问组件方法）
@@ -204,11 +203,9 @@ export default {
       // 内部函数设置器（供 mounted 使用）
       _setDragDropFunctions: (functions: {
         showPathUpdateDialog: (info: { existingGame: any; newPath: string; newFileName: string }) => void
-        extractGameNameFromPath: (filePath: string) => string
         addGame: (game: any) => Promise<void>
       }) => {
         showPathUpdateDialogFn = functions.showPathUpdateDialog
-        extractGameNameFromPathFn = functions.extractGameNameFromPath
         addGameFn = functions.addGame
         
         // 初始化拖拽 composable（传入响应式的 games）
@@ -216,7 +213,6 @@ export default {
           games: games, // 传入 ref，composable 内部会处理
           onAddGame: addGameFn,
           onShowPathUpdateDialog: showPathUpdateDialogFn,
-          extractGameNameFromPath: extractGameNameFromPathFn,
           isElectronEnvironment: isElectronEnvironment.value
         })
       },
@@ -277,7 +273,7 @@ export default {
       gameEmptyStateConfig: {
         emptyIcon: '🎮',
         emptyTitle: '你的游戏库是空的',
-        emptyDescription: '点击"添加游戏"按钮来添加你的第一个游戏，或直接拖拽 .exe 文件到此处',
+        emptyDescription: '点击"添加游戏"按钮来添加你的第一个游戏，或直接拖拽 .exe、.app 或 .swf 文件到此处',
         emptyButtonText: '添加第一个游戏',
         emptyButtonAction: 'showAddGameDialog',
         noResultsIcon: '🔍',
@@ -1065,7 +1061,6 @@ export default {
           }
           this.showPathUpdateDialog = true
         },
-        extractGameNameFromPath: this.extractGameNameFromPath,
         addGame: this.addGame
       })
     }
@@ -1268,7 +1263,7 @@ export default {
 }
 
 .game-content.drag-over::before {
-  content: '拖拽游戏可执行文件到这里添加游戏';
+  content: '拖拽游戏文件到这里添加游戏 (.exe / .app / .swf)';
   position: absolute;
   top: 50%;
   left: 50%;

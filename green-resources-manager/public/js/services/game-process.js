@@ -39,10 +39,51 @@
 const { spawn } = require('child_process')
 const { exec } = require('child_process')
 const fs = require('fs')
+const path = require('path')
 const windowsUtils = require('../utils/windows-utils')
 
 // 存储游戏进程信息的 Map，键为 PID，值为游戏信息对象
 const gameProcesses = new Map()
+
+/**
+ * 查找 Ruffle 可执行文件路径
+ * @returns {Promise<string|null>} Ruffle 路径，如果未找到则返回null
+ */
+async function findRufflePath() {
+  // 获取当前文件所在目录（public/js/services/）
+  const currentDir = __dirname
+  // 获取应用根目录（public/）
+  const publicDir = path.join(currentDir, '../..')
+  // 获取项目根目录（green-resources-manager/）
+  const projectRoot = path.join(publicDir, '..')
+  
+  // 可能的 Ruffle 路径（按优先级排序）
+  // 注意：打包后，extraFiles 会将文件放到应用根目录下的 third-party/ 目录
+  const possiblePaths = [
+    // 打包环境：应用根目录/third-party/ruffle-nightly-2025_12_20-windows-x86_64/ruffle.exe
+    path.join(publicDir, '..', 'third-party', 'ruffle-nightly-2025_12_20-windows-x86_64', 'ruffle.exe'),
+    // 开发环境：src/third-party/ruffle-nightly-2025_12_20-windows-x86_64/ruffle.exe
+    path.join(projectRoot, 'src', 'third-party', 'ruffle-nightly-2025_12_20-windows-x86_64', 'ruffle.exe'),
+  ]
+
+  // 检查每个路径
+  for (const rufflePath of possiblePaths) {
+    try {
+      const normalizedPath = path.normalize(rufflePath)
+      if (fs.existsSync(normalizedPath)) {
+        console.log('✅ 找到 Ruffle:', normalizedPath)
+        return normalizedPath
+      }
+    } catch (error) {
+      // 忽略路径错误，继续查找下一个
+      continue
+    }
+  }
+
+  console.warn('⚠️ 未找到 Ruffle 可执行文件')
+  console.warn('已检查的路径:', possiblePaths.map(p => path.normalize(p)))
+  return null
+}
 
 /**
  * 获取当前运行的游戏进程数量。
@@ -114,19 +155,48 @@ async function launchGame(executablePath, gameName, getMainWindow) {
       throw new Error('游戏文件不存在')
     }
 
-    // 启动游戏进程
-    const gameProcess = spawn(executablePath, [], {
-      detached: true,
-      stdio: 'ignore'
-    })
+    // 检查是否为Flash游戏（.swf文件）
+    const fileExt = path.extname(executablePath).toLowerCase()
+    const isFlashGame = fileExt === '.swf'
+
+    let gameProcess
+    let actualExecutablePath = executablePath
+
+    if (isFlashGame) {
+      // Flash游戏：使用 Ruffle 运行
+      console.log('🎮 检测到Flash游戏，使用 Ruffle 运行')
+      
+      const rufflePath = await findRufflePath()
+      if (!rufflePath) {
+        throw new Error('未找到 Ruffle。请确保 Ruffle 已正确安装到 third-party 目录。')
+      }
+
+      // 使用 Ruffle 运行.swf文件
+      // Ruffle 命令行格式: ruffle.exe "path/to/game.swf"
+      actualExecutablePath = rufflePath
+      gameProcess = spawn(rufflePath, [executablePath], {
+        detached: true,
+        stdio: 'ignore'
+      })
+      
+      console.log(`✅ 使用 Ruffle 运行: ${rufflePath} "${executablePath}"`)
+    } else {
+      // 普通游戏：直接运行可执行文件
+      gameProcess = spawn(executablePath, [], {
+        detached: true,
+        stdio: 'ignore'
+      })
+    }
 
     // 记录游戏启动时间
     const startTime = Date.now()
     const gameInfo = {
       process: gameProcess,
       startTime: startTime,
-      executablePath: executablePath,
-      gameName: gameName || null
+      executablePath: executablePath, // 保存原始路径（.swf文件路径或普通游戏路径）
+      actualExecutablePath: actualExecutablePath, // 保存实际运行的可执行文件路径（Ruffle路径或普通游戏路径）
+      gameName: gameName || null,
+      isFlashGame: isFlashGame
     }
 
     // 存储进程信息
@@ -164,6 +234,12 @@ async function launchGame(executablePath, gameName, getMainWindow) {
     // 监听进程错误事件
     gameProcess.on('error', (error) => {
       console.error(`游戏进程 ${gameProcess.pid} 发生错误:`, error)
+      if (isFlashGame) {
+        console.error('Flash游戏启动失败，可能的原因：')
+        console.error('1. Ruffle 未正确安装或路径不正确')
+        console.error('2. .swf文件损坏或格式不正确')
+        console.error('3. Ruffle 版本不兼容')
+      }
       gameProcesses.delete(gameProcess.pid)
     })
 

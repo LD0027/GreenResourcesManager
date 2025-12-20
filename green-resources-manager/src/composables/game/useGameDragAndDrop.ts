@@ -4,6 +4,30 @@ import notify from '../../utils/NotificationService'
 import type { Game, GameDragDropOptions } from '../../types/game'
 
 /**
+ * 从文件路径提取游戏名称
+ * @param filePath - 文件路径或文件名
+ * @returns 提取的游戏名称
+ */
+function extractGameNameFromPath(filePath: string): string {
+  const fileName = filePath.split(/[\\/]/).pop() || ''
+  const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '')
+
+  let cleanName = nameWithoutExt
+    .replace(/\.exe$/i, '')
+    .replace(/\.app$/i, '')
+    .replace(/\.swf$/i, '')
+    .replace(/^game[-_\s]*/i, '')
+    .replace(/[-_\s]+/g, ' ')
+    .trim()
+
+  if (!cleanName) {
+    cleanName = nameWithoutExt
+  }
+
+  return cleanName.charAt(0).toUpperCase() + cleanName.slice(1)
+}
+
+/**
  * 游戏拖拽处理 composable
  * 处理游戏文件的拖拽添加逻辑
  */
@@ -12,7 +36,6 @@ export function useGameDragAndDrop(options: GameDragDropOptions) {
     games: gamesInput,
     onAddGame,
     onShowPathUpdateDialog,
-    extractGameNameFromPath,
     isElectronEnvironment
   } = options
 
@@ -24,7 +47,7 @@ export function useGameDragAndDrop(options: GameDragDropOptions) {
 
   // 使用通用拖拽 composable
   const dragDrop = useDragAndDrop({
-    acceptedExtensions: ['.exe', '.app'],
+    acceptedExtensions: ['.exe', '.app', '.swf'],
     enabled: true,
     onDrop: handleGameDrop
   })
@@ -168,7 +191,7 @@ export function useGameDragAndDrop(options: GameDragDropOptions) {
         notify.toast(
           'error',
           '添加失败',
-          `没有成功添加任何游戏文件\n原因：${failureReason}\n\n提示：\n• 请确保拖拽的是 .exe 或 .app 文件\n• 检查文件是否已存在于游戏库中\n• 尝试重新拖拽文件`
+          `没有成功添加任何游戏文件\n原因：${failureReason}\n\n提示：\n• 请确保拖拽的是 .exe、.app 或 .swf 文件\n• 检查文件是否已存在于游戏库中\n• 尝试重新拖拽文件`
         )
       }
 

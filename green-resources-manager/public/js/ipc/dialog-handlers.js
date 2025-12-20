@@ -139,6 +139,7 @@ function registerIpcHandlers(ipcMain, getMainWindow, dialog) {
         title: '选择游戏可执行文件',
         filters: [
           { name: '可执行文件', extensions: ['exe', 'app', 'sh'] },
+          { name: 'Flash游戏', extensions: ['swf'] },
           { name: '所有文件', extensions: ['*'] }
         ],
         properties: ['openFile']

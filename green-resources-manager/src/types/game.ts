@@ -101,11 +101,6 @@ export interface GameDragDropOptions {
   onShowPathUpdateDialog: (info: PathUpdateInfo) => void
   
   /**
-   * 从文件路径提取游戏名称的函数
-   */
-  extractGameNameFromPath: (filePath: string) => string
-  
-  /**
    * 是否为 Electron 环境
    */
   isElectronEnvironment: boolean

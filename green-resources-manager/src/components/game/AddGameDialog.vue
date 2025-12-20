@@ -208,7 +208,7 @@ export default {
     showFileInput(type) {
       const input = document.createElement('input')
       input.type = 'file'
-      input.accept = type === 'executable' ? '.exe,.app' : 'image/*'
+      input.accept = type === 'executable' ? '.exe,.app,.swf' : 'image/*'
       input.onchange = (e) => {
         const file = (e.target as HTMLInputElement).files?.[0]
         if (file) {
@@ -231,6 +231,7 @@ export default {
       let cleanName = nameWithoutExt
         .replace(/\.exe$/i, '')
         .replace(/\.app$/i, '')
+        .replace(/\.swf$/i, '')
         .replace(/^game[-_\s]*/i, '')
         .replace(/[-_\s]+/g, ' ')
         .trim()
