@@ -38,7 +38,7 @@ declare global {
 	/**
 	 * 加载 EPUB 文件 - 0.3.x 版本
 	 * 注意：只能 open 一次，不能重复 open
-	 * 在 Electron 环境中，使用 ArrayBuffer 方式加载以避免路径问题
+	 * 在 Electron 环境中，优先使用 file:// URL，因为 epubjs 需要访问 ZIP 内部文件
 	 */
 	async loadEpub(filePath: string): Promise<void> {
 	  try {
@@ -46,32 +46,36 @@ declare global {
 		
 		console.log('开始加载 EPUB 文件:', filePath);
 		
-		// 在 Electron 环境中，尝试多种方式加载 EPUB 文件
-		// 根据 epubjs 文档，可以接受 URL 或 ArrayBuffer
+		// epubjs 0.3.x 需要能够访问 EPUB 文件的 ZIP 内部结构
+		// 在 Electron 环境中，优先尝试 Blob URL，然后尝试 ArrayBuffer，最后回退到 file:// URL
 		let epubSource: string | ArrayBuffer = filePath;
-		let useArrayBuffer = false;
+		let blobUrl: string | null = null;
 		
 		// 检查是否在 Electron 环境中
 		if (window.electronAPI && window.electronAPI.readFileAsDataUrl) {
 		  try {
-			console.log('尝试使用 ArrayBuffer 方式加载 EPUB');
+			console.log('尝试加载 EPUB 文件...');
 			
-			// 方法1: 尝试使用 fetch 读取文件为 ArrayBuffer
+			// 方法1: 尝试使用 fetch 读取文件为 Blob，然后创建 Blob URL
+			// 根据掘金文章，Blob URL 在 Electron 中可能更可靠
 			const fileUrl = filePath.startsWith('file://') 
 			  ? filePath 
 			  : `file:///${filePath.replace(/\\/g, '/')}`;
 			
+			let blob: Blob | null = null;
+			
 			try {
 			  const response = await fetch(fileUrl);
 			  if (response.ok) {
-				const arrayBuffer = await response.arrayBuffer();
-				// 验证 ArrayBuffer 是否是有效的 EPUB 文件（EPUB 文件是 ZIP 格式，前4个字节应该是 PK\x03\x04）
-				const view = new Uint8Array(arrayBuffer.slice(0, 4));
+				blob = await response.blob();
+				// 验证 Blob 是否是有效的 EPUB 文件
+				const view = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
 				const isValidEpub = view[0] === 0x50 && view[1] === 0x4B && view[2] === 0x03 && view[3] === 0x04;
 				if (isValidEpub) {
-				  epubSource = arrayBuffer;
-				  useArrayBuffer = true;
-				  console.log('成功使用 fetch 读取为 ArrayBuffer，文件大小:', arrayBuffer.byteLength, 'bytes');
+				  // 优先尝试 Blob URL（根据掘金文章，这可能更可靠）
+				  blobUrl = URL.createObjectURL(blob);
+				  epubSource = blobUrl;
+				  console.log('成功使用 Blob URL 方式加载，文件大小:', blob.size, 'bytes');
 				} else {
 				  throw new Error('文件不是有效的 EPUB 格式（不是 ZIP 文件）');
 				}
@@ -81,51 +85,78 @@ declare global {
 			} catch (fetchError) {
 			  console.warn('fetch 方法失败，尝试使用 Data URL 转换:', fetchError);
 			  
-			  // 方法2: 使用 Data URL 转换为 ArrayBuffer
+			  // 方法2: 使用 Data URL 转换为 Blob
 			  const dataUrl = await window.electronAPI.readFileAsDataUrl(filePath);
 			  if (dataUrl) {
-				// 将 Data URL 转换为 ArrayBuffer
+				// 将 Data URL 转换为 Blob
 				const response = await fetch(dataUrl);
-				const blob = await response.blob();
-				const arrayBuffer = await blob.arrayBuffer();
+				blob = await response.blob();
 				// 验证 EPUB 文件格式
+				const view = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+				const isValidEpub = view[0] === 0x50 && view[1] === 0x4B && view[2] === 0x03 && view[3] === 0x04;
+				if (isValidEpub) {
+				  blobUrl = URL.createObjectURL(blob);
+				  epubSource = blobUrl;
+				  console.log('成功使用 Data URL 转换为 Blob URL，文件大小:', blob.size, 'bytes');
+				} else {
+				  throw new Error('文件不是有效的 EPUB 格式（不是 ZIP 文件）');
+				}
+			  } else {
+				throw new Error('无法读取文件为 Data URL');
+			  }
+			}
+			
+		  } catch (blobError) {
+			console.warn('Blob URL 方法失败，尝试 ArrayBuffer 方式:', blobError);
+			
+			// 方法3: 尝试直接使用 ArrayBuffer
+			try {
+			  const fileUrl = filePath.startsWith('file://') 
+				? filePath 
+				: `file:///${filePath.replace(/\\/g, '/')}`;
+			  
+			  const response = await fetch(fileUrl);
+			  if (response.ok) {
+				const arrayBuffer = await response.arrayBuffer();
 				const view = new Uint8Array(arrayBuffer.slice(0, 4));
 				const isValidEpub = view[0] === 0x50 && view[1] === 0x4B && view[2] === 0x03 && view[3] === 0x04;
 				if (isValidEpub) {
 				  epubSource = arrayBuffer;
-				  useArrayBuffer = true;
-				  console.log('成功使用 Data URL 转换为 ArrayBuffer，文件大小:', arrayBuffer.byteLength, 'bytes');
+				  console.log('成功使用 ArrayBuffer 方式加载，文件大小:', arrayBuffer.byteLength, 'bytes');
 				} else {
-				  throw new Error('文件不是有效的 EPUB 格式（不是 ZIP 文件）');
+				  throw new Error('文件不是有效的 EPUB 格式');
 				}
 			  }
+			} catch (arrayBufferError) {
+			  console.warn('ArrayBuffer 方法也失败，将使用 file:// URL 方式:', arrayBufferError);
+			  // 如果都失败，使用文件路径转换为 file:// URL
+			  const normalizedPath = filePath.replace(/\\/g, '/');
+			  if (normalizedPath.match(/^[A-Za-z]:/)) {
+				epubSource = `file:///${normalizedPath}`;
+			  } else {
+				epubSource = `file://${normalizedPath}`;
+			  }
+			  console.log('回退到 file:// URL 方式:', epubSource);
 			}
-		  } catch (dataUrlError) {
-			console.warn('ArrayBuffer 方法失败，将使用 file:// URL 方式:', dataUrlError);
-			// 如果都失败，使用文件路径转换为 file:// URL
-			useArrayBuffer = false;
 		  }
-		}
-		
-		// 根据 epubjs 文档，0.3.x 版本可以直接使用 ArrayBuffer 或 URL
-		// 如果使用 ArrayBuffer，直接使用；否则转换为 file:// URL
-		if (!useArrayBuffer) {
-		  // 如果是文件路径，转换为 file:// URL 格式
-		  if (!epubSource.toString().startsWith('file://') && !epubSource.toString().startsWith('http://') && !epubSource.toString().startsWith('https://')) {
-			// Windows 路径转换为 file:// URL（注意：需要正确的格式）
+		} else {
+		  // 非 Electron 环境，使用 URL
+		  if (!filePath.startsWith('file://') && !filePath.startsWith('http://') && !filePath.startsWith('https://')) {
 			const normalizedPath = filePath.replace(/\\/g, '/');
-			// Windows 路径格式：file:///C:/path/to/file.epub
 			if (normalizedPath.match(/^[A-Za-z]:/)) {
 			  epubSource = `file:///${normalizedPath}`;
 			} else {
 			  epubSource = `file://${normalizedPath}`;
 			}
-			console.log('转换文件路径为 file:// URL:', epubSource);
+			console.log('使用 file:// URL 方式加载:', epubSource);
+		  } else {
+			epubSource = filePath;
+			console.log('使用提供的 URL 方式加载:', epubSource);
 		  }
 		}
 		
-		// 正确方式：根据 epubjs 文档，可以直接传入 URL 或 ArrayBuffer 创建实例
-		// 但为了避免路径重复问题，我们使用无参构造函数，然后调用 open
+		// 创建 epubjs 实例
+		// 根据博客：epubjs 0.3.x 可以直接在构造函数中传入 URL，或使用 open 方法
 		if (window && window.ePub) {
 		  // 使用全局的 ePub
 		  this.book = window.ePub();
@@ -134,51 +165,130 @@ declare global {
 		  this.book = ePub();
 		}
 		
+		// 验证 book 对象是否创建成功
+		if (!this.book) {
+		  throw new Error('无法创建 epubjs 实例，请检查 epubjs 是否正确加载');
+		}
+		
 		// epubjs 0.3.x 使用 ready 事件
 		await new Promise<void>((resolve, reject) => {
+		  let isResolved = false;
+		  const book = this.book; // 保存引用，避免 this.book 被设置为 null
+		  
+		  // 辅助函数：安全地移除事件监听器
+		  const safeOff = (event: string, handler: any) => {
+			if (book && typeof book.off === 'function') {
+			  try {
+				book.off(event, handler);
+			  } catch (e) {
+				console.warn(`移除事件监听器失败 (${event}):`, e);
+			  }
+			}
+		  };
+		  
 		  const timeout = setTimeout(() => {
-			reject(new Error('EPUB 加载超时（30秒）'));
+			if (!isResolved) {
+			  isResolved = true;
+			  // 清理 Blob URL
+			  if (blobUrl) {
+				URL.revokeObjectURL(blobUrl);
+			  }
+			  // 清理事件监听器
+			  safeOff('ready', readyHandler);
+			  safeOff('error', errorHandler);
+			  reject(new Error('EPUB 加载超时（30秒）'));
+			}
 		  }, 30000); // 30秒超时
 		  
 		  // 监听 ready 事件
 		  const readyHandler = () => {
+			if (isResolved) return;
+			isResolved = true;
 			clearTimeout(timeout);
 			this.isReady = true;
 			console.log('EPUB 准备就绪');
 			// 清理事件监听器
-			this.book.off('ready', readyHandler);
-			this.book.off('error', errorHandler);
+			safeOff('ready', readyHandler);
+			safeOff('error', errorHandler);
+			// 注意：不在这里清理 Blob URL，因为后续可能还需要使用
 			resolve();
 		  };
 		  
 		  // 监听 error 事件
 		  const errorHandler = (error: any) => {
+			if (isResolved) return;
+			isResolved = true;
 			clearTimeout(timeout);
 			console.error('EPUB 加载错误:', error);
+			console.error('错误详情:', {
+			  message: error?.message,
+			  error: error,
+			  source: epubSource,
+			  sourceType: typeof epubSource,
+			  filePath: filePath,
+			  bookExists: !!book
+			});
+			
+			// 清理 Blob URL
+			if (blobUrl) {
+			  URL.revokeObjectURL(blobUrl);
+			}
 			// 清理事件监听器
-			this.book.off('ready', readyHandler);
-			this.book.off('error', errorHandler);
-			reject(new Error(`EPUB 加载错误: ${error.message || error}`));
+			safeOff('ready', readyHandler);
+			safeOff('error', errorHandler);
+			reject(new Error(`EPUB 加载错误: ${error?.message || error || '未知错误'}`));
 		  };
 		  
-		  this.book.on('ready', readyHandler);
-		  this.book.on('error', errorHandler);
-		  
-		  // 只 open 一次
-		  console.log('调用 book.open，源类型:', epubSource instanceof ArrayBuffer ? 'ArrayBuffer' : typeof epubSource);
-		  try {
-			this.book.open(epubSource);
-		  } catch (openError) {
+		  // 先绑定事件监听器
+		  if (book && typeof book.on === 'function') {
+			book.on('ready', readyHandler);
+			book.on('error', errorHandler);
+		  } else {
 			clearTimeout(timeout);
-			this.book.off('ready', readyHandler);
-			this.book.off('error', errorHandler);
-			reject(new Error(`打开 EPUB 文件失败: ${openError.message || openError}`));
+			reject(new Error('epubjs book 对象不支持事件监听'));
+			return;
+		  }
+		  
+		  // 然后调用 open
+		  console.log('调用 book.open，源类型:', typeof epubSource, '是否为 ArrayBuffer:', epubSource instanceof ArrayBuffer);
+		  if (epubSource instanceof ArrayBuffer) {
+			console.log('ArrayBuffer 大小:', epubSource.byteLength, 'bytes');
+		  }
+		  
+		  try {
+			if (!book || typeof book.open !== 'function') {
+			  throw new Error('epubjs book 对象没有 open 方法');
+			}
+			book.open(epubSource);
+			console.log('book.open 调用成功，等待 ready 事件...');
+		  } catch (openError: any) {
+			if (isResolved) return;
+			isResolved = true;
+			clearTimeout(timeout);
+			// 清理 Blob URL
+			if (blobUrl) {
+			  URL.revokeObjectURL(blobUrl);
+			}
+			// 清理事件监听器
+			safeOff('ready', readyHandler);
+			safeOff('error', errorHandler);
+			reject(new Error(`打开 EPUB 文件失败: ${openError?.message || openError || '未知错误'}`));
 		  }
 		});
+		
+		// 保存 Blob URL 以便后续清理
+		if (blobUrl) {
+		  (this as any)._blobUrl = blobUrl;
+		}
 		
 		console.log('EPUB 文件加载成功:', filePath);
 	  } catch (error: any) {
 		console.error('加载 EPUB 文件失败:', error);
+		// 确保清理 Blob URL
+		if ((this as any)._blobUrl) {
+		  URL.revokeObjectURL((this as any)._blobUrl);
+		  (this as any)._blobUrl = null;
+		}
 		throw new Error(`无法加载 EPUB 文件: ${error.message}`);
 	  }
 	}
@@ -563,6 +673,12 @@ declare global {
 	 * 释放资源
 	 */
 	destroy(): void {
+	  // 清理 Blob URL
+	  if ((this as any)._blobUrl) {
+		URL.revokeObjectURL((this as any)._blobUrl);
+		(this as any)._blobUrl = null;
+	  }
+	  
 	  if (this.book) {
 		// epubjs 0.3.x 可能没有明确的销毁方法
 		// 可以尝试调用相关方法

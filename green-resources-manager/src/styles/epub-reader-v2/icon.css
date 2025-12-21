@@ -1,0 +1,33 @@
+/* Icon字体样式 - 如果没有字体文件，使用 Unicode 字符作为降级方案 */
+
+.icon-back::before {
+  content: "←";
+}
+.icon-bright::before {
+  content: "☀";
+}
+.icon-cart::before {
+  content: "🛒";
+  color: #666;
+}
+.icon-menu::before {
+  content: "☰";
+}
+.icon-more::before {
+  content: "⋮";
+}
+.icon-person::before {
+  content: "👤";
+}
+.icon-progress::before {
+  content: "📊";
+}
+
+[class^="icon-"], [class*=" icon-"] {
+  display: inline-block;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  vertical-align: middle;
+}
+

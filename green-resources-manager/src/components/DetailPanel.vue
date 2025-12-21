@@ -159,7 +159,8 @@ export default {
       return defaultStats.filter(stat => stat.value !== undefined && stat.value !== null)
     },
     computedActions() {
-      if (this.actions.length > 0) {
+      // 如果传递了 actions prop 且不为空，使用传递的 actions
+      if (this.actions && Array.isArray(this.actions) && this.actions.length > 0) {
         return this.actions
       }
       
