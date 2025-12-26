@@ -47,29 +47,6 @@
         @update:model-value="onSafetyKeyUrlChange"
       />
       
-      <SettingFilePicker
-        title="页面背景图片"
-        description="为所有页面设置自定义背景图片"
-        :model-value="settings.backgroundImagePath"
-        placeholder="选择背景图片..."
-        picker-type="image"
-        browse-button-text="选择图片"
-        @update:model-value="onBackgroundImageChange"
-      />
-      
-      <div v-if="settings.backgroundImagePath" class="setting-item">
-        <label class="setting-label">
-          <span class="setting-title">清除背景图片</span>
-          <span class="setting-desc">移除当前设置的背景图片</span>
-        </label>
-        <div class="setting-control">
-          <button class="btn-clear-background" @click="clearBackgroundImage">
-            <span class="btn-icon">🗑️</span>
-            清除
-          </button>
-        </div>
-      </div>
-      
       <SettingSelect
         title="存档文件夹位置"
         description="选择存档文件夹的保存位置"
@@ -603,36 +580,6 @@ export default {
           })
         }
       }
-    },
-    
-    onBackgroundImageChange(newPath: string) {
-      this.updateSetting('backgroundImagePath', newPath)
-      // 触发自定义事件，通知 App.vue 更新背景图片
-      try {
-        const event = new CustomEvent('background-image-changed', {
-          detail: { path: newPath }
-        })
-        window.dispatchEvent(event)
-        console.log('已触发 background-image-changed 事件')
-      } catch (error) {
-        console.error('触发背景图片变化事件失败:', error)
-      }
-      notify.success('背景图片已更新', '页面背景图片已设置为: ' + newPath)
-    },
-    
-    clearBackgroundImage() {
-      this.updateSetting('backgroundImagePath', '')
-      // 触发自定义事件，通知 App.vue 清除背景图片
-      try {
-        const event = new CustomEvent('background-image-changed', {
-          detail: { path: '' }
-        })
-        window.dispatchEvent(event)
-        console.log('已触发 background-image-changed 事件（清除）')
-      } catch (error) {
-        console.error('触发背景图片清除事件失败:', error)
-      }
-      notify.success('背景图片已清除', '已移除页面背景图片')
     }
   }
 }
@@ -850,26 +797,6 @@ input:checked + .toggle-slider:before {
 
 .btn-icon {
   font-size: 1rem;
-}
-
-.btn-clear-background {
-  background: #ef4444;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.3s ease;
-}
-
-.btn-clear-background:hover {
-  background: #dc2626;
-  transform: translateY(-1px);
 }
 </style>
 

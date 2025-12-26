@@ -9,6 +9,7 @@
         :type="type"
         :value="modelValue"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+        @blur="$emit('blur', $event)"
         :placeholder="placeholder"
         :readonly="readonly"
         class="setting-input"
@@ -51,7 +52,7 @@ export default {
       default: () => ({})
     }
   },
-  emits: ['update:modelValue']
+  emits: ['update:modelValue', 'blur']
 }
 </script>
 

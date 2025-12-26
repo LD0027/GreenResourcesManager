@@ -18,8 +18,8 @@
           class="sidebar-logo"
           @click="onLogoClick"
         >
-        <h1> 绿色资源管理器</h1>
-        <p>绿色、全能的资源管理器</p>
+        <h1>{{ customAppTitle || '绿色资源管理器' }}</h1>
+        <p>{{ customAppSubtitle || '绿色、全能的资源管理器' }}</p>
         <p class="version">v{{ version }}</p>
       </div>
 
@@ -198,6 +198,9 @@ export default {
       autoBackupInterval: 0, // 自动备份时间间隔（分钟），0表示禁用
       autoBackupTimer: null, // 自动备份定时器
       lastBackupTime: null, // 上次备份时间
+      // 个性化设置
+      customAppTitle: '', // 自定义软件标题
+      customAppSubtitle: '', // 自定义软件副标题
       // 背景图片相关
       backgroundImagePath: '', // 背景图片路径
       backgroundImageUrl: '', // 背景图片URL（用于显示）
@@ -1068,6 +1071,14 @@ export default {
       console.log('从 SaveManager 加载主题设置:', theme)
       this.applyTheme(theme)
       
+      // 加载个性化设置
+      if (settings?.customAppTitle) {
+        this.customAppTitle = settings.customAppTitle
+      }
+      if (settings?.customAppSubtitle) {
+        this.customAppSubtitle = settings.customAppSubtitle
+      }
+      
       // 加载背景图片设置
       if (settings?.backgroundImagePath) {
         await this.applyBackgroundImage(settings.backgroundImagePath)
@@ -1102,6 +1113,18 @@ export default {
     
     // 检测 WinRAR 安装状态
     await this.checkWinRARInstallation()
+    
+    // 监听自定义标题变化事件
+    window.addEventListener('custom-app-title-changed', (event: CustomEvent) => {
+      const { title } = event.detail
+      this.customAppTitle = title || ''
+    })
+    
+    // 监听自定义副标题变化事件
+    window.addEventListener('custom-app-subtitle-changed', (event: CustomEvent) => {
+      const { subtitle } = event.detail
+      this.customAppSubtitle = subtitle || ''
+    })
     
     // 监听背景图片变化事件
     window.addEventListener('background-image-changed', async (event: CustomEvent) => {
