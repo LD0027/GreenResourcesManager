@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>桌宠</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 600px; /* 300px 菜单 + 300px 主区域 */
+      height: 700px;
+      overflow: hidden;
+      background: transparent;
+      cursor: default;
+      user-select: none;
+      position: relative;
+      margin: 0;
+      padding: 0;
+    }
+    
+    /* 交互区域 */
+    #interaction-area {
+      position: absolute;
+      top: 0;
+      left: 300px; /* 菜单宽度，让交互区域在右侧 */
+      width: 350px; /* 与图片宽度一致 */
+      height: calc(100% - 50px); /* 为底部输入框留出空间 */
+      z-index: 2;
+      pointer-events: auto;
+    }
+    
+    #pet-image {
+      position: absolute;
+      top: 0;
+      left: 300px; /* 菜单宽度，让图片在右侧 */
+      width: 350px; /* 固定宽度 */
+      height: calc(100% - 50px); /* 为底部输入框留出空间 */
+      object-fit: cover;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+      z-index: 1;
+    }
+
+    /* 输入框容器 */
+    #input-container {
+      position: absolute;
+      bottom: 0;
+      left: 300px; /* 菜单宽度，让输入框在右侧 */
+      width: 300px;
+      height: 50px;
+      background: rgba(255, 255, 255, 0.95);
+      border-top: 2px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      box-sizing: border-box;
+      z-index: 100;
+      -webkit-app-region: no-drag;
+      pointer-events: auto;
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+      gap: 8px;
+    }
+
+    #chat-input {
+      flex: 1;
+      height: 32px;
+      border: 1px solid #d0d0d0;
+      border-radius: 16px;
+      padding: 0 12px;
+      font-size: 14px;
+      outline: none;
+      background: #f5f5f5;
+      color: #333;
+      transition: all 0.2s;
+      -webkit-app-region: no-drag;
+    }
+
+    #chat-input:focus {
+      border-color: #4a90e2;
+      background: #fff;
+      box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+    }
+
+    #chat-input::placeholder {
+      color: #999;
+    }
+
+    #send-button {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: #4a90e2;
+      color: white;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: all 0.2s;
+      -webkit-app-region: no-drag;
+      flex-shrink: 0;
+    }
+
+    #send-button:hover {
+      background: #357abd;
+      transform: scale(1.05);
+    }
+
+    #send-button:active {
+      transform: scale(0.95);
+    }
+    
+    /* 对话框样式 */
+    #dialog {
+      position: absolute;
+      top: 20px;
+      left: 450px; /* 300px 菜单 + 150px（主区域中心） */
+      transform: translateX(-50%);
+      min-width: 200px;
+      max-width: 280px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 2px solid #4a90e2;
+      border-radius: 12px;
+      padding: 12px 16px;
+      padding-top: 28px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: none;
+      z-index: 1000;
+      -webkit-app-region: no-drag;
+      pointer-events: auto;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    #dialog.show {
+      display: block;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+    
+    #dialog-text {
+      color: #333;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 8px;
+      word-wrap: break-word;
+    }
+    
+    #dialog-close {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 16px;
+      color: #666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    
+    #dialog-close:hover {
+      background: rgba(0, 0, 0, 0.1);
+      color: #333;
+    }
+    
+    /* 对话框箭头（指向下方的桌宠） */
+    #dialog::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 10px solid #4a90e2;
+    }
+    
+    #dialog::before {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 10px solid rgba(255, 255, 255, 0.95);
+    }
+
+    /* 菜单按钮 */
+    #menu-button {
+      width: 36px;
+      height: 36px;
+      background: rgba(74, 144, 226, 0.9);
+      border: 2px solid #4a90e2;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: white;
+      -webkit-app-region: no-drag;
+      pointer-events: auto;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      flex-shrink: 0;
+    }
+
+    #menu-button:hover {
+      background: rgba(74, 144, 226, 1);
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    /* 菜单页面 - 可以滑动隐藏 */
+    #menu {
+      position: absolute;
+      top: 0;
+      left: 0; /* 从左侧开始 */
+      width: 300px;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(10px);
+      z-index: 0; /* 低于图片，这样菜单隐藏时会在图片背后 */
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      box-sizing: border-box;
+      -webkit-app-region: no-drag;
+      pointer-events: auto;
+      transform: translateX(100%); /* 默认隐藏（滑到图片背后） */
+      transition: transform 0.3s ease; /* 滑动动画 */
+      border-right: 2px solid #e0e0e0;
+      /* box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15); */
+    }
+
+    #menu.show {
+      transform: translateX(0); /* 显示时滑到左侧 */
+      opacity: 1;
+      transition: all 0.3s ease;
+    }
+
+    #menu.hidden {
+      pointer-events: none; /* 隐藏时禁用交互 */
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    #menu-header {
+      display: flex;
+      justify-content: center; /* 关闭按钮隐藏后，标题居中 */
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    #menu-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    /* 菜单关闭按钮 - 隐藏，因为菜单常驻显示 */
+    #menu-close {
+      display: none;
+    }
+
+    #menu-content {
+      flex: 1;
+      /* overflow-y: auto; */
+      /* overflow-x: hidden; */
+      /* 自定义滚动条样式 */
+      scrollbar-width: thin;
+      scrollbar-color: #c0c0c0 #f0f0f0;
+    }
+
+    /* Webkit 浏览器滚动条样式 */
+    #menu-content::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    #menu-content::-webkit-scrollbar-track {
+      background: #f0f0f0;
+      border-radius: 4px;
+    }
+
+    #menu-content::-webkit-scrollbar-thumb {
+      background: #c0c0c0;
+      border-radius: 4px;
+    }
+
+    #menu-content::-webkit-scrollbar-thumb:hover {
+      background: #a0a0a0;
+    }
+
+    .menu-section {
+      margin-bottom: 25px;
+    }
+
+    .menu-section-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #666;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .affection-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 0;
+    }
+
+    .affection-label {
+      font-size: 16px;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .affection-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #4a90e2;
+    }
+
+    /* 调试模式样式 */
+    #debug-overlay {
+      position: absolute;
+      top: 0;
+      left: 300px;
+      width: 350px;
+      height: calc(100% - 50px);
+      z-index: 3;
+      pointer-events: none;
+      display: block; /* 始终显示，用于显示点击标记 */
+    }
+
+    .debug-region {
+      position: absolute;
+      border: 2px solid;
+      background: rgba(255, 255, 255, 0.1);
+      pointer-events: none;
+    }
+
+    .debug-region-label {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 2px 6px;
+      font-size: 12px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+
+    .debug-click-marker {
+      position: absolute;
+      font-size: 20px;
+      line-height: 1;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      animation: debugClickFade 2s ease-out forwards;
+      z-index: 10;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 扩散效果的圆形背景 */
+    .debug-click-marker::before {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid #ffffff;
+      transform: translate(-50%, -50%);
+      left: 50%;
+      top: 50%;
+      animation: debugClickFadeCircle 2s ease-out forwards;
+      z-index: -1;
+    }
+
+    @keyframes debugClickFade {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.5);
+      }
+    }
+
+    @keyframes debugClickFadeCircle {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(2);
+      }
+    }
+
+    .debug-info-panel {
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: monospace;
+      margin-top: 10px;
+    }
+
+    .debug-info-item {
+      margin-bottom: 5px;
+      line-height: 1.4;
+    }
+
+    .debug-info-label {
+      color: #4a90e2;
+      font-weight: bold;
+    }
+
+    .debug-toggle-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 30px;
+      height: 30px;
+      background: rgba(74, 144, 226, 0.8);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-app-region: no-drag;
+    }
+
+    .debug-toggle-button:hover {
+      background: rgba(74, 144, 226, 1);
+    }
+  </style>
+</head>
+<body>
+  <img id="pet-image" src="../imgs/pets/仓鼠娘.png" alt="桌宠">
+  
+  <!-- 交互区域 -->
+  <div id="interaction-area"></div>
+
+  <!-- 调试覆盖层 -->
+  <div id="debug-overlay"></div>
+
+  <!-- 调试切换按钮 -->
+  <button id="debug-toggle" class="debug-toggle-button" title="调试模式 (D)">D</button>
+
+  <!-- 输入框容器 -->
+  <div id="input-container">
+    <button id="menu-button" title="菜单">☰</button>
+    <input type="text" id="chat-input" placeholder="输入消息..." />
+    <button id="send-button" title="发送">➤</button>
+  </div>
+  
+  <!-- 对话框 -->
+  <div id="dialog">
+    <button id="dialog-close" title="关闭">×</button>
+    <div id="dialog-text"></div>
+  </div>
+
+  <!-- 菜单页面 -->
+  <div id="menu">
+    <div id="menu-header">
+      <div id="menu-title">桌宠菜单</div>
+      <button id="menu-close" title="关闭">×</button>
+    </div>
+    <div id="menu-content">
+      <div class="menu-section">
+        <div class="affection-display">
+          <span class="affection-label">好感度：</span>
+          <span class="affection-value" id="affection-value">0</span>
+        </div>
+      </div>
+      <div class="menu-section">
+        <div class="affection-display">
+          <span class="affection-label">食欲：</span>
+          <span class="affection-value" id="appetite-value">0</span>
+        </div>
+      </div>
+      <div class="menu-section">
+        <div class="affection-display">
+          <span class="affection-label">睡眠欲：</span>
+          <span class="affection-value" id="sleepiness-value">0</span>
+        </div>
+      </div>
+      <div class="menu-section">
+        <div class="affection-display">
+          <span class="affection-label">性欲：</span>
+          <span class="affection-value" id="libido-value">0</span>
+        </div>
+      </div>
+      <!-- 调试信息面板 -->
+      <div class="menu-section" id="debug-info-section" style="display: none;">
+        <div class="menu-section-title">调试信息</div>
+        <div class="debug-info-panel" id="debug-info-panel">
+          <div class="debug-info-item">
+            <span class="debug-info-label">调试模式：</span>关闭
+          </div>
+          <div class="debug-info-item">
+            <span class="debug-info-label">点击坐标：</span>未点击
+          </div>
+          <div class="debug-info-item">
+            <span class="debug-info-label">区域：</span>无
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    console.log('pet.html loaded');
+    const dialog = document.getElementById('dialog');
+    const dialogText = document.getElementById('dialog-text');
+    const dialogClose = document.getElementById('dialog-close');
+    const menuButton = document.getElementById('menu-button');
+    const menu = document.getElementById('menu');
+    const menuClose = document.getElementById('menu-close');
+    const menuContent = document.getElementById('menu-content');
+    const affectionValue = document.getElementById('affection-value');
+    const appetiteValue = document.getElementById('appetite-value');
+    const sleepinessValue = document.getElementById('sleepiness-value');
+    const libidoValue = document.getElementById('libido-value');
+    const chatInput = document.getElementById('chat-input');
+    const sendButton = document.getElementById('send-button');
+    const debugOverlay = document.getElementById('debug-overlay');
+    const debugToggle = document.getElementById('debug-toggle');
+    const debugInfoSection = document.getElementById('debug-info-section');
+    const debugInfoPanel = document.getElementById('debug-info-panel');
+    const petImage = document.getElementById('pet-image');
+    
+    // 好感度和其他属性
+    let currentAffection = 0;
+    let currentAppetite = 0;
+    let currentSleepiness = 0;
+    let currentLibido = 0;
+    
+    // 调试模式
+    let debugMode = false;
+    
+    // 区域配置（包含对话文本）
+    const regionConfig = [
+      { 
+        name: '头', 
+        x: [0.3, 0.7], 
+        y: [0.1, 0.2], 
+        color: '#00ff00',
+        dialogs: [
+          '不要摸我的头啦～',
+          '头发会乱的！',
+          '摸摸头很舒服呢～',
+          '再摸我就要生气了！'
+        ]
+      },
+      { 
+        name: '书', 
+        x: [0.7, 1], 
+        y: [0.3, 0.45], 
+        color: '#0000ff',
+        dialogs: [
+          '我在看书呢～',
+          '这本书很有趣哦！',
+          '不要打扰我看书～',
+          '你也想一起看吗？'
+        ]
+      },
+      { 
+        name: '右手', 
+        x: [0, 0.2], 
+        y: [0.8, 0.88], 
+        color: '#ffff00',
+        dialogs: [
+          '手手很软吧～',
+          '嘿嘿，和主人牵手的感觉真好~',
+          '想和我牵手吗？',
+          '我的手很温暖吧～'
+        ]
+      },
+      { 
+        name: '胸部', 
+        x: [0.33, 0.67], 
+        y: [0.4, 0.5], 
+        color: '#ff00ff',
+        dialogs: [
+          '变态！',
+          '不可以随便摸女孩子哦！',
+        ]
+      },
+      { 
+        name: '胖次', 
+        x: [0.55, 0.7], 
+        y: [0.8, 0.85], 
+        color: '#00ffff',
+        dialogs: [
+          '哎呀！讨厌啦！',
+          '不要看那里！',
+          '好害羞...',
+
+        ]
+      },
+      { 
+        name: '脚', 
+        x: [0.55, 0.8], 
+        y: [0.85, 1], 
+        color: '#ff8800',
+        dialogs: [
+          '嘿嘿，有点痒哦~',
+          '不要摸我的脚啦，很脏的！',
+          '嘿嘿，想闻闻我的脚嘛~'
+        ]
+      },
+      { 
+        name: '屁股', 
+        x: [0.33, 0.62], 
+        y: [0.75, 0.85], 
+        color: '#8800ff',
+        dialogs: [
+          '不要拍我的屁股！',
+          '好害羞...',
+          '你在做什么呀！',
+          '屁股很敏感的！'
+        ]
+      },
+      { 
+        name: '大腿', 
+        x: [0.5, 1], 
+        y: [0.5, 0.75], 
+        color: '#0088ff',
+        dialogs: [
+          '大腿很软吧～',
+          '不要摸那里！',
+          '好痒的～',
+          '我的腿很漂亮吧～'
+        ]
+      }
+    ];
+    
+    // 最近点击历史
+    let clickHistory = [];
+    
+    // 默认对话文本列表（当点击不在任何区域时使用）
+    const defaultDialogTexts = [
+      '你好！我是你的桌宠～',
+      '今天也要加油哦！',
+      '有什么需要帮助的吗？',
+      '记得多休息，不要太累～',
+      '工作/学习辛苦了！',
+      '保持好心情，一切都会好起来的！',
+      '我在这里陪伴你～',
+      '点击我可以看到不同的消息哦！'
+    ];
+    
+    // 拖动和点击的区分
+    let mouseDownX = 0;
+    let mouseDownY = 0;
+    let mouseDownTime = 0;
+    let isDragging = false;
+    const DRAG_THRESHOLD = 5; // 拖动阈值（像素）
+    const CLICK_MAX_TIME = 300; // 点击最大时间（毫秒）
+    
+    // 当前显示的文本索引
+    let currentTextIndex = 0;
+    
+    // 对话框自动隐藏定时器
+    let dialogAutoHideTimer = null;
+    
+    // 显示对话框
+    function showDialog(region = null) {
+      // 清除之前的自动隐藏定时器
+      if (dialogAutoHideTimer) {
+        clearTimeout(dialogAutoHideTimer);
+        dialogAutoHideTimer = null;
+      }
+      
+      let text;
+      
+      // 如果指定了区域，从该区域的对话数组中随机选择
+      if (region && region.dialogs && region.dialogs.length > 0) {
+        const randomIndex = Math.floor(Math.random() * region.dialogs.length);
+        text = region.dialogs[randomIndex];
+        console.log(`区域 "${region.name}" 的对话:`, text);
+      } else {
+        // 否则使用默认对话
+        text = defaultDialogTexts[currentTextIndex % defaultDialogTexts.length];
+        currentTextIndex++;
+        console.log('默认对话:', text);
+      }
+      
+      // 打字机效果显示文本
+      dialogText.textContent = '';
+      dialog.classList.add('show');
+      
+      let charIndex = 0;
+      const typeInterval = setInterval(() => {
+        if (charIndex < text.length) {
+          dialogText.textContent += text[charIndex];
+          charIndex++;
+        } else {
+          clearInterval(typeInterval);
+          // 打字机效果完成后，3秒后自动隐藏
+          dialogAutoHideTimer = setTimeout(() => {
+            hideDialog();
+            dialogAutoHideTimer = null;
+          }, 3000);
+        }
+      }, 50); // 每个字符间隔50ms
+    }
+    
+    // 隐藏对话框
+    function hideDialog() {
+      // 清除自动隐藏定时器
+      if (dialogAutoHideTimer) {
+        clearTimeout(dialogAutoHideTimer);
+        dialogAutoHideTimer = null;
+      }
+      dialog.classList.remove('show');
+      dialogText.textContent = '';
+    }
+
+    // 切换菜单显示/隐藏
+    function toggleMenu() {
+      menu.classList.toggle('show');
+      // 切换交互状态
+      if (menu.classList.contains('show')) {
+        menu.classList.remove('hidden');
+      } else {
+        menu.classList.add('hidden');
+      }
+    }
+
+    // 初始化菜单
+    function initMenu() {
+      loadPetData();
+      // 菜单默认隐藏（不添加 show 类，添加 hidden 类禁用交互）
+      menu.classList.remove('show');
+      menu.classList.add('hidden');
+    }
+
+    // 加载桌宠数据（包括好感度、食欲、睡眠欲、性欲）
+    async function loadPetData() {
+      if (window.electronAPI && window.electronAPI.getPetData) {
+        try {
+          const result = await window.electronAPI.getPetData();
+          if (result && result.success !== false) {
+            currentAffection = result.affection || 0;
+            currentAppetite = result.appetite || 0;
+            currentSleepiness = result.sleepiness || 0;
+            currentLibido = result.libido || 0;
+            updateAllDisplays();
+          }
+        } catch (error) {
+          console.error('加载桌宠数据失败:', error);
+        }
+      }
+    }
+
+    // 更新所有显示
+    function updateAllDisplays() {
+      affectionValue.textContent = currentAffection;
+      appetiteValue.textContent = currentAppetite;
+      sleepinessValue.textContent = currentSleepiness;
+      libidoValue.textContent = currentLibido;
+    }
+
+    // 保存桌宠数据
+    async function savePetData() {
+      if (window.electronAPI && window.electronAPI.savePetData) {
+        try {
+          await window.electronAPI.savePetData({
+            affection: currentAffection,
+            appetite: currentAppetite,
+            sleepiness: currentSleepiness,
+            libido: currentLibido
+          });
+        } catch (error) {
+          console.error('保存桌宠数据失败:', error);
+        }
+      }
+    }
+
+    // 增加好感度（点击桌宠时）
+    async function increaseAffection(amount = 1) {
+      currentAffection = Math.min(100, currentAffection + amount);
+      updateAllDisplays();
+      await savePetData();
+    }
+
+    // ========== 调试模式相关函数 ==========
+    
+    // 切换调试模式
+    function toggleDebugMode() {
+      debugMode = !debugMode;
+      if (debugMode) {
+        debugInfoSection.style.display = 'block';
+        debugToggle.style.background = 'rgba(255, 0, 0, 0.8)';
+        drawRegions();
+        updateDebugInfo('调试模式已开启');
+      } else {
+        debugInfoSection.style.display = 'none';
+        debugToggle.style.background = 'rgba(74, 144, 226, 0.8)';
+        clearRegions();
+      }
+      // 保存调试模式状态到本地存储
+      try {
+        localStorage.setItem('petDebugMode', debugMode);
+      } catch (e) {
+        console.error('保存调试模式状态失败:', e);
+      }
+    }
+
+    // 绘制区域边界
+    function drawRegions() {
+      clearRegions();
+      const imageRect = petImage.getBoundingClientRect();
+      const overlayRect = debugOverlay.getBoundingClientRect();
+      
+      regionConfig.forEach(region => {
+        const regionDiv = document.createElement('div');
+        regionDiv.className = 'debug-region';
+        regionDiv.style.borderColor = region.color;
+        regionDiv.style.left = (region.x[0] * 100) + '%';
+        regionDiv.style.top = (region.y[0] * 100) + '%';
+        regionDiv.style.width = ((region.x[1] - region.x[0]) * 100) + '%';
+        regionDiv.style.height = ((region.y[1] - region.y[0]) * 100) + '%';
+        
+        const label = document.createElement('div');
+        label.className = 'debug-region-label';
+        label.textContent = region.name;
+        label.style.color = region.color;
+        regionDiv.appendChild(label);
+        
+        debugOverlay.appendChild(regionDiv);
+      });
+    }
+
+    // 清除区域边界（保留点击标记）
+    function clearRegions() {
+      // 只清除区域边界，保留点击标记
+      const regions = debugOverlay.querySelectorAll('.debug-region');
+      regions.forEach(region => region.remove());
+    }
+
+    // 根据点击坐标判断区域
+    function getRegionByClick(x, y) {
+      const imageRect = petImage.getBoundingClientRect();
+      const relativeX = (x - imageRect.left) / imageRect.width;
+      const relativeY = (y - imageRect.top) / imageRect.height;
+      
+      for (const region of regionConfig) {
+        if (relativeX >= region.x[0] && relativeX < region.x[1] &&
+            relativeY >= region.y[0] && relativeY < region.y[1]) {
+          return {
+            region: region,
+            relativeX: relativeX,
+            relativeY: relativeY,
+            pixelX: x - imageRect.left,
+            pixelY: y - imageRect.top
+          };
+        }
+      }
+      return null;
+    }
+
+    // 显示点击标记（爱心）
+    function showClickMarker(clientX, clientY, regionName) {
+      const imageRect = petImage.getBoundingClientRect();
+      const overlayRect = debugOverlay.getBoundingClientRect();
+      
+      // 计算相对于覆盖层的位置
+      const relativeX = clientX - overlayRect.left;
+      const relativeY = clientY - overlayRect.top;
+      
+      const marker = document.createElement('div');
+      marker.className = 'debug-click-marker';
+      marker.textContent = '❤️'; // 爱心 emoji
+      marker.style.left = relativeX + 'px';
+      marker.style.top = relativeY + 'px';
+      debugOverlay.appendChild(marker);
+      
+      // 2秒后移除标记
+      setTimeout(() => {
+        if (marker.parentNode) {
+          marker.parentNode.removeChild(marker);
+        }
+      }, 2000);
+    }
+
+    // 更新调试信息
+    function updateDebugInfo(info, clickData = null) {
+      if (!debugMode) return;
+      
+      let html = `<div class="debug-info-item">
+        <span class="debug-info-label">调试模式：</span>${debugMode ? '开启' : '关闭'}
+      </div>`;
+      
+      if (clickData) {
+        html += `<div class="debug-info-item">
+          <span class="debug-info-label">点击坐标：</span>(${clickData.pixelX.toFixed(0)}, ${clickData.pixelY.toFixed(0)})
+        </div>`;
+        html += `<div class="debug-info-item">
+          <span class="debug-info-label">相对坐标：</span>(${(clickData.relativeX * 100).toFixed(1)}%, ${(clickData.relativeY * 100).toFixed(1)}%)
+        </div>`;
+        html += `<div class="debug-info-item">
+          <span class="debug-info-label">区域：</span>${clickData.region.name}
+        </div>`;
+        html += `<div class="debug-info-item">
+          <span class="debug-info-label">区域范围：</span>X: [${(clickData.region.x[0] * 100).toFixed(1)}%, ${(clickData.region.x[1] * 100).toFixed(1)}%], Y: [${(clickData.region.y[0] * 100).toFixed(1)}%, ${(clickData.region.y[1] * 100).toFixed(1)}%]
+        </div>`;
+      } else {
+        html += `<div class="debug-info-item">
+          <span class="debug-info-label">点击坐标：</span>未点击
+        </div>`;
+        html += `<div class="debug-info-item">
+          <span class="debug-info-label">区域：</span>无
+        </div>`;
+      }
+      
+      if (info) {
+        html += `<div class="debug-info-item" style="margin-top: 10px; color: #4a90e2;">
+          ${info}
+        </div>`;
+      }
+      
+      debugInfoPanel.innerHTML = html;
+    }
+    
+    const interactionArea = document.getElementById('interaction-area');
+    console.log('interactionArea:', interactionArea);
+    
+    // 拖动相关变量
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let windowStartX = 0;
+    let windowStartY = 0;
+    let isWindowDragging = false;
+    
+    // 鼠标按下事件
+    interactionArea.addEventListener('mousedown', (e) => {
+      console.log('mousedown');
+      mouseDownX = e.clientX;
+      mouseDownY = e.clientY;
+      mouseDownTime = Date.now();
+      isDragging = false;
+      
+      // 记录拖动起始位置（屏幕坐标）
+      dragStartX = e.screenX;
+      dragStartY = e.screenY;
+      
+      // 获取窗口当前位置
+      if (window.electronAPI && window.electronAPI.getPetWindowPosition) {
+        window.electronAPI.getPetWindowPosition().then(pos => {
+          if (pos && pos.success) {
+            windowStartX = pos.x;
+            windowStartY = pos.y;
+          }
+        }).catch(err => console.error('获取窗口位置失败:', err));
+      }
+    });
+    
+    // 鼠标移动事件（用于检测拖动和移动窗口）
+    interactionArea.addEventListener('mousemove', (e) => {
+      if (mouseDownTime > 0) {
+        const deltaX = Math.abs(e.clientX - mouseDownX);
+        const deltaY = Math.abs(e.clientY - mouseDownY);
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        if (distance > DRAG_THRESHOLD) {
+          if (!isDragging) {
+            isDragging = true;
+            isWindowDragging = true;
+            console.log('开始拖动窗口');
+          }
+          
+          // 如果正在拖动窗口，移动窗口
+          if (isWindowDragging && window.electronAPI && window.electronAPI.movePetWindow) {
+            const deltaScreenX = e.screenX - dragStartX;
+            const deltaScreenY = e.screenY - dragStartY;
+            const newX = windowStartX + deltaScreenX;
+            const newY = windowStartY + deltaScreenY;
+            
+            window.electronAPI.movePetWindow(newX, newY).catch(err => {
+              console.error('移动窗口失败:', err);
+            });
+          }
+        }
+      }
+    });
+    
+    // 鼠标抬起事件（检测点击）
+    interactionArea.addEventListener('mouseup', (e) => {
+      console.log('mouseup');
+      
+      if (mouseDownTime > 0) {
+        const timeDiff = Date.now() - mouseDownTime;
+        const deltaX = Math.abs(e.clientX - mouseDownX);
+        const deltaY = Math.abs(e.clientY - mouseDownY);
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        console.log('isDragging:', isDragging, 'distance:', distance, 'timeDiff:', timeDiff);
+        
+        // 如果是点击（不是拖动），显示对话框并增加好感度
+        if (!isDragging && distance <= DRAG_THRESHOLD && timeDiff < CLICK_MAX_TIME) {
+          console.log('触发点击，显示对话框');
+          
+          // 获取点击的区域
+          const clickData = getRegionByClick(e.clientX, e.clientY);
+          let clickedRegion = null;
+          
+          if (clickData) {
+            clickedRegion = clickData.region;
+            console.log('点击区域:', clickedRegion.name, '坐标:', clickData.pixelX, clickData.pixelY);
+            
+            // 始终显示点击标记（正常功能）
+            showClickMarker(e.clientX, e.clientY, clickedRegion.name);
+            
+            // 调试模式：显示点击信息和区域
+            if (debugMode) {
+              updateDebugInfo('点击检测', clickData);
+            }
+          } else {
+            console.log('点击位置不在任何区域内，使用默认对话');
+            
+            // 始终显示点击标记（正常功能）
+            showClickMarker(e.clientX, e.clientY, '无区域');
+            
+            // 调试模式：显示点击信息
+            if (debugMode) {
+              updateDebugInfo('点击位置不在任何区域内', {
+                pixelX: e.clientX - petImage.getBoundingClientRect().left,
+                pixelY: e.clientY - petImage.getBoundingClientRect().top,
+                relativeX: (e.clientX - petImage.getBoundingClientRect().left) / petImage.getBoundingClientRect().width,
+                relativeY: (e.clientY - petImage.getBoundingClientRect().top) / petImage.getBoundingClientRect().height,
+                region: { name: '无', x: [0, 0], y: [0, 0] }
+              });
+            }
+          }
+          
+          // 增加好感度
+          increaseAffection(1);
+          
+          // 如果对话框已经显示，先隐藏再显示新的
+          if (dialog.classList.contains('show')) {
+            hideDialog();
+            setTimeout(() => {
+              showDialog(clickedRegion);
+            }, 200);
+          } else {
+            showDialog(clickedRegion);
+          }
+        }
+        
+        // 重置状态
+        mouseDownTime = 0;
+        isDragging = false;
+        isWindowDragging = false;
+      }
+    });
+    
+    // 鼠标离开窗口时重置状态
+    interactionArea.addEventListener('mouseleave', () => {
+      console.log('mouseleave');
+      mouseDownTime = 0;
+      isDragging = false;
+      isWindowDragging = false;
+    });
+    
+    // 关闭按钮点击事件
+    dialogClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hideDialog();
+    });
+    
+    // 点击对话框外部区域关闭（可选）
+    document.addEventListener('click', (e) => {
+      if (dialog.classList.contains('show') && !dialog.contains(e.target) && e.target !== dialog) {
+        // 不自动关闭，让用户手动关闭
+      }
+    });
+
+    // 菜单按钮点击事件 - 切换菜单显示/隐藏
+    menuButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMenu();
+    });
+
+    // 确保菜单内容区域可以滚动
+    if (menuContent) {
+      // 阻止滚动事件冒泡到body，确保菜单内容可以滚动
+      menuContent.addEventListener('wheel', (e) => {
+        // 如果内容可以滚动，阻止事件冒泡
+        const isScrollable = menuContent.scrollHeight > menuContent.clientHeight;
+        if (isScrollable) {
+          e.stopPropagation();
+        }
+      }, { passive: true });
+    }
+
+    // 发送消息
+    function sendMessage() {
+      const message = chatInput.value.trim();
+      if (message) {
+        console.log('发送消息:', message);
+        // 显示在对话框中
+        dialogText.textContent = message;
+        dialog.classList.add('show');
+        
+        // 增加好感度（发送消息时）
+        increaseAffection(1);
+        
+        // 清空输入框
+        chatInput.value = '';
+        
+        // 3秒后自动隐藏对话框
+        setTimeout(() => {
+          hideDialog();
+        }, 3000);
+      }
+    }
+
+    // 发送按钮点击事件
+    sendButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sendMessage();
+    });
+
+    // 输入框回车事件
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        sendMessage();
+      }
+    });
+
+    // 防止输入框事件冒泡到交互区域
+    chatInput.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+    });
+
+    sendButton.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+    });
+
+    // 调试模式切换按钮事件
+    debugToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDebugMode();
+    });
+
+    // 快捷键支持（D键切换调试模式）
+    document.addEventListener('keydown', (e) => {
+      // 如果焦点在输入框，不触发快捷键
+      if (document.activeElement === chatInput) return;
+      
+      if (e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        toggleDebugMode();
+      }
+    });
+
+    // 窗口大小改变时重新绘制区域（调试模式）
+    window.addEventListener('resize', () => {
+      if (debugMode) {
+        drawRegions();
+      }
+    });
+
+    // 初始化时加载好感度并初始化菜单
+    initMenu();
+    
+    // 初始化调试模式状态
+    try {
+      const savedDebugMode = localStorage.getItem('petDebugMode');
+      if (savedDebugMode === 'true') {
+        debugMode = true;
+        toggleDebugMode();
+      }
+    } catch (e) {
+      console.error('加载调试模式状态失败:', e);
+    }
+  </script>
+</body>
+</html>
+

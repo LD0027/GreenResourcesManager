@@ -164,7 +164,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onSafetyKeyTriggered: (callback) => ipcRenderer.on('safety-key-triggered', callback),
   
   // 备份整个存档目录
-  backupSaveDataDirectory: (saveDataDir, maxBackups) => ipcRenderer.invoke('backup-save-data-directory', saveDataDir, maxBackups)
+  backupSaveDataDirectory: (saveDataDir, maxBackups) => ipcRenderer.invoke('backup-save-data-directory', saveDataDir, maxBackups),
+  
+  // 桌宠功能
+  showPetWindow: () => ipcRenderer.invoke('show-pet-window'),
+  hidePetWindow: () => ipcRenderer.invoke('hide-pet-window'),
+  togglePetWindow: () => ipcRenderer.invoke('toggle-pet-window'),
+  isPetWindowVisible: () => ipcRenderer.invoke('is-pet-window-visible'),
+  getPetWindowPosition: () => ipcRenderer.invoke('get-pet-window-position'),
+  movePetWindow: (x, y) => ipcRenderer.invoke('move-pet-window', x, y),
+  resizePetWindow: (width, height) => ipcRenderer.invoke('resize-pet-window', width, height),
+  getPetAffection: () => ipcRenderer.invoke('get-pet-affection'),
+  savePetAffection: (affection) => ipcRenderer.invoke('save-pet-affection', affection),
+  getPetData: () => ipcRenderer.invoke('get-pet-data'),
+  savePetData: (data) => ipcRenderer.invoke('save-pet-data', data)
 })
 
 // 监听来自主进程的消息

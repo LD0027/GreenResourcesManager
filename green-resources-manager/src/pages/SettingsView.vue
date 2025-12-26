@@ -94,6 +94,13 @@
             :settings="settings"
             @update:settings="handleSettingUpdate"
           />
+
+          <!-- 桌宠设置 -->
+          <PetSettings 
+            v-if="currentCategory === 'pet'"
+            :settings="settings"
+            @update:settings="handleSettingUpdate"
+          />
         </div>
         
       </div>
@@ -113,6 +120,7 @@ import NovelSettings from '../components/settings/NovelSettings.vue'
 import WebsiteSettings from '../components/settings/WebsiteSettings.vue'
 import UpdateSettings from '../components/settings/UpdateSettings.vue'
 import ArchiveSettings from '../components/settings/ArchiveSettings.vue'
+import PetSettings from '../components/settings/PetSettings.vue'
 
 export default {
   name: 'SettingsView',
@@ -125,7 +133,8 @@ export default {
     NovelSettings,
     WebsiteSettings,
     UpdateSettings,
-    ArchiveSettings
+    ArchiveSettings,
+    PetSettings
   },
   data() {
     return {
@@ -139,6 +148,7 @@ export default {
         { id: 'novels', name: '小说', icon: '📚', description: '小说阅读和管理设置' },
         { id: 'websites', name: '网站', icon: '🌐', description: '网站收藏和管理设置' },
         { id: 'archive', name: '解压/压缩', icon: '📦', description: '压缩包解压和压缩相关设置' },
+        { id: 'pet', name: '桌宠', icon: '🐾', description: '桌宠显示和管理设置' },
         { id: 'updates', name: '更新', icon: '🔄', description: '应用更新和版本管理' }
       ],
       settings: {

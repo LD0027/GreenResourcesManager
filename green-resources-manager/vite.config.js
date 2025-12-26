@@ -10,7 +10,9 @@ export default defineConfig({
     assetsDir: 'assets',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html')
+        main: resolve(__dirname, 'index.html'),
+        pet: resolve(__dirname, 'public/html/pet.html'),
+        'video-player': resolve(__dirname, 'public/html/video-player.html')
       }
     }
   },

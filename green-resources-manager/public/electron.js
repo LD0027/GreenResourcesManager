@@ -9,6 +9,7 @@ const systemTray = require('./js/tray/system-tray')
 // 引入窗口模块
 const mainWindowModule = require('./js/window/main-window')
 const videoWindowModule = require('./js/window/video-window')
+const petWindowModule = require('./js/window/pet-window')
 // 引入菜单模块
 const appMenu = require('./js/menu/app-menu')
 // 引入服务模块
@@ -93,7 +94,10 @@ if (!gotTheLock) {
     mainWindowModule.registerIpcHandlers(ipcMain)
     
     // 注册视频窗口相关的 IPC 处理器
-    videoWindowModule.registerIpcHandlers(ipcMain)
+    videoWindowModule.registerIpcHandlers(ipcMain, isDev)
+    
+    // 注册桌宠窗口相关的 IPC 处理器
+    petWindowModule.registerIpcHandlers(ipcMain, isDev)
     
     // 注册游戏进程相关的 IPC 处理器
     gameProcess.registerIpcHandlers(ipcMain, () => mainWindowModule.getMainWindow())
