@@ -557,7 +557,10 @@ export default {
     
     showAudioDetail(audio) {
       this.selectedAudio = audio
-      this.contextMenu.visible = false
+      // 关闭上下文菜单（如果存在）
+      if (this.$refs.baseView) {
+        (this.$refs.baseView as any).showContextMenu = false
+      }
     },
     
     closeAudioDetail() {
@@ -660,7 +663,10 @@ export default {
       this.editActorInput = ''
       this.editTagInput = ''
       this.showEditDialog = true
-      this.contextMenu.visible = false
+      // 关闭上下文菜单（如果存在）
+      if (this.$refs.baseView) {
+        (this.$refs.baseView as any).showContextMenu = false
+      }
       
       // 关闭详情页面
       this.closeAudioDetail()

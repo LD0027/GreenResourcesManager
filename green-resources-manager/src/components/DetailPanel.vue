@@ -108,7 +108,7 @@ export default {
     type: {
       type: String,
       required: true,
-      validator: value => ['game', 'image', 'album'].includes(value)
+      validator: value => ['game', 'image', 'album', 'video', 'audio'].includes(value)
     },
     isRunning: {
       type: Boolean,
@@ -129,7 +129,9 @@ export default {
       const titles = {
         game: '游戏简介',
         image: '漫画简介',
-        album: '漫画简介'
+        album: '漫画简介',
+        video: '视频简介',
+        audio: '音频简介'
       }
       return titles[this.type] || '简介'
     },
@@ -137,7 +139,9 @@ export default {
       const titles = {
         game: '游戏标签',
         image: '漫画标签',
-        album: '漫画标签'
+        album: '漫画标签',
+        video: '视频标签',
+        audio: '音频标签'
       }
       return titles[this.type] || '标签'
     },
