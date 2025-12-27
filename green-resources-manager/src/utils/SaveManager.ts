@@ -11,6 +11,9 @@ class SaveManager {
   defaultData: Record<string, any>
   // 数据缓存
   dataCache: Record<string, any> = {}
+  // 设置缓存
+  settingsCache: Record<string, any> = null
+  settingsCacheDirty: boolean = false  // 标记缓存是否已被修改，需要写入磁盘
 
   constructor() {
     this.dataDirectory = 'SaveData'
@@ -1308,6 +1311,10 @@ class SaveManager {
    */
   async saveSettings(settings) {
     try {
+      // 更新缓存
+      this.settingsCache = JSON.parse(JSON.stringify(settings))
+      this.settingsCacheDirty = true
+      
       await this.ensureDataTypeDirectory('settings')
       
       const data = {
@@ -1319,6 +1326,7 @@ class SaveManager {
       const success = await this.writeJsonFile(this.filePaths.settings, data)
       if (success) {
         console.log('设置数据保存成功')
+        this.settingsCacheDirty = false
         
         // 同时更新根目录的设置文件（保持同步）
         try {
@@ -1355,11 +1363,19 @@ class SaveManager {
    * @returns {Promise<Object>} 设置数据对象
    */
   async loadSettings() {
+    // 优先使用缓存，减少磁盘读取
+    if (this.settingsCache) {
+      console.log('从缓存加载设置数据')
+      return JSON.parse(JSON.stringify(this.settingsCache))
+    }
+
     try {
       const data = await this.readJsonFile(this.filePaths.settings)
       if (data && data.settings) {
         console.log('从文件加载设置数据成功')
-        return { ...this.defaultData.settings, ...data.settings }
+        const result = { ...this.defaultData.settings, ...data.settings }
+        this.settingsCache = result  // 缓存结果
+        return JSON.parse(JSON.stringify(result))
       }
       
       // 如果文件不存在或为空，尝试从 localStorage 加载
@@ -1369,13 +1385,16 @@ class SaveManager {
         try {
           const parsedSettings = JSON.parse(localStorageSettings)
           console.log('从 localStorage 加载设置成功')
-          return { ...this.defaultData.settings, ...parsedSettings }
+          const result = { ...this.defaultData.settings, ...parsedSettings }
+          this.settingsCache = result
+          return JSON.parse(JSON.stringify(result))
         } catch (parseError) {
           console.warn('解析 localStorage 设置失败:', parseError)
         }
       }
       
-      return this.defaultData.settings
+      this.settingsCache = this.defaultData.settings
+      return JSON.parse(JSON.stringify(this.defaultData.settings))
     } catch (error) {
       console.error('加载设置数据失败:', error)
       
@@ -1385,13 +1404,16 @@ class SaveManager {
         if (localStorageSettings) {
           const parsedSettings = JSON.parse(localStorageSettings)
           console.log('降级到 localStorage 加载设置成功')
-          return { ...this.defaultData.settings, ...parsedSettings }
+          const result = { ...this.defaultData.settings, ...parsedSettings }
+          this.settingsCache = result
+          return JSON.parse(JSON.stringify(result))
         }
       } catch (localStorageError) {
         console.warn('从 localStorage 加载设置也失败:', localStorageError)
       }
       
-      return this.defaultData.settings
+      this.settingsCache = this.defaultData.settings
+      return JSON.parse(JSON.stringify(this.defaultData.settings))
     }
   }
 
