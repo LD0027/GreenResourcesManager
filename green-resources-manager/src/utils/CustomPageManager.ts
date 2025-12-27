@@ -8,6 +8,8 @@ import saveManager from './SaveManager';
 class CustomPageManager {
   private pages: PageConfig[] = [];
   private initialized = false;
+  // 有效的 ResourceType 值
+  private readonly validResourceTypes: ResourceType[] = ['Game', 'Image', 'Video', 'Novel', 'Website', 'Audio'];
 
   constructor() {
   }
@@ -20,6 +22,22 @@ class CustomPageManager {
   }
 
   /**
+   * 验证并规范化 ResourceType
+   * @param type 原始类型值
+   * @returns 有效的 ResourceType，如果无效则返回 null
+   */
+  private validateResourceType(type: any): ResourceType | null {
+    if (typeof type !== 'string') {
+      return null;
+    }
+    // 检查是否为有效的 ResourceType
+    if (this.validResourceTypes.includes(type as ResourceType)) {
+      return type as ResourceType;
+    }
+    return null;
+  }
+
+  /**
    * 初始化页面管理器
    * 加载页面配置，如果不存在则创建默认配置
    */
@@ -29,10 +47,22 @@ class CustomPageManager {
     try {
       const loadedPages = await saveManager.readJsonFile(this.pagesFilePath);
       if (loadedPages && Array.isArray(loadedPages) && loadedPages.length > 0) {
-        this.pages = loadedPages.map((page: any) => ({
-          ...page,
-          type: (page.type.charAt(0).toUpperCase() + page.type.slice(1).toLowerCase()) as ResourceType
-        }));
+        this.pages = loadedPages.map((page: any) => {
+          const validType = this.validateResourceType(page.type);
+          if (!validType) {
+            console.warn(`[CustomPageManager] 无效的页面类型: "${page.type}", 已跳过页面: ${page.id}`);
+            return null;
+          }
+          return {
+            ...page,
+            type: validType
+          };
+        }).filter((page): page is PageConfig => page !== null);
+        
+        // 如果有页面因类型无效而被过滤掉，需要保存更新后的列表
+        if (this.pages.length !== loadedPages.length) {
+          await this.savePages();
+        }
       } else {
         this.pages = this.getDefaultPages();
         await this.savePages();
