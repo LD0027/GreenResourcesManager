@@ -349,6 +349,23 @@ async function deleteFile(filePath) {
 }
 
 /**
+ * 删除目录
+ * @param {string} dirPath - 目录路径
+ * @returns {Promise<Object>} { success: boolean, error?: string }
+ */
+async function deleteDirectory(dirPath) {
+  try {
+    if (fs.existsSync(dirPath)) {
+      fs.rmSync(dirPath, { recursive: true, force: true })
+    }
+    return { success: true }
+  } catch (error) {
+    console.error('删除目录失败:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
  * 确保目录存在（不存在则创建）
  * @param {string} dirPath - 目录路径
  * @returns {Promise<Object>} { success: boolean, error?: string }
@@ -479,6 +496,7 @@ module.exports = {
   writeFile,
   saveThumbnail,
   deleteFile,
+  deleteDirectory,
   ensureDirectory,
   listFiles,
   getFileStats,
