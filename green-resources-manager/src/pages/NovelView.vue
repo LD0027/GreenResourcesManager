@@ -287,7 +287,8 @@ import ContentView from '../components/epub-reader-v2/ContentView.vue'
 import saveManager from '../utils/SaveManager.ts'
 import { useNovelManagement } from '../composables/novel/useNovelManagement'
 import { useNovelFilter } from '../composables/novel/useNovelFilter'
-import { ref } from 'vue'
+import { ref, PropType } from 'vue'
+import { PageConfig } from '../types/page'
 import { EpubParser } from '../utils/EpubParser'
 
 import notify from '../utils/NotificationService.ts'
@@ -307,9 +308,15 @@ export default {
     ContentView
   },
   emits: ['filter-data-updated'],
-  setup() {
+  props: {
+    pageConfig: {
+      type: Object as PropType<PageConfig>,
+      default: () => ({ id: 'novels', type: 'Novel' })
+    }
+  },
+  setup(props) {
     // 初始化小说管理 composable
-    const novelManagement = useNovelManagement()
+    const novelManagement = useNovelManagement(props.pageConfig.id)
     
     // 初始化小说筛选 composable
     const novelFilter = useNovelFilter({
@@ -1080,9 +1087,9 @@ export default {
         this.updateFilterData()
         
         // 检测文件存在性（仅在应用启动时检测一次）
-        if (this.$parent.shouldCheckFileLoss && this.$parent.shouldCheckFileLoss()) {
+        if (this.$root.shouldCheckFileLoss && this.$root.shouldCheckFileLoss()) {
           await this.checkFileExistence()
-          this.$parent.markFileLossChecked()
+          this.$root.markFileLossChecked()
         }
         
         // 计算小说列表总页数
@@ -1618,16 +1625,6 @@ export default {
     this.setFilterDataUpdatedCallback((data) => {
       this.$emit('filter-data-updated', data)
     })
-    
-    // 等待父组件（App.vue）的存档系统初始化完成
-    const maxWaitTime = 5000
-    const startTime = Date.now()
-    while (!this.$parent.isInitialized && (Date.now() - startTime) < maxWaitTime) {
-      await new Promise(resolve => setTimeout(resolve, 50))
-    }
-    if (this.$parent.isInitialized) {
-      console.log('✅ 存档系统已初始化，开始加载小说数据')
-    }
     
     await this.loadNovels()
     
