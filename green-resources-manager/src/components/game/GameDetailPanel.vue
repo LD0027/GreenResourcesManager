@@ -5,7 +5,9 @@
     type="game" 
     :is-running="isRunning"
     @close="handleClose"
-    @action="handleAction" 
+    @action="handleAction"
+    @update-rating="handleUpdateRating"
+    @update-comment="handleUpdateComment"
   />
 </template>
 
@@ -31,13 +33,19 @@ export default {
       default: false
     }
   },
-  emits: ['close', 'action'],
+  emits: ['close', 'action', 'update-rating', 'update-comment'],
   methods: {
     handleClose() {
       this.$emit('close')
     },
     handleAction(actionKey, game) {
       this.$emit('action', actionKey, game)
+    },
+    handleUpdateRating(rating, game) {
+      this.$emit('update-rating', rating, game)
+    },
+    handleUpdateComment(comment, game) {
+      this.$emit('update-comment', comment, game)
     }
   }
 }

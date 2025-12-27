@@ -44,7 +44,9 @@
         :game="currentGame"
         :is-running="currentGame ? isGameRunning(currentGame) : false"
         @close="closeGameDetail"
-        @action="handleDetailAction" 
+        @action="handleDetailAction"
+        @update-rating="handleUpdateRating"
+        @update-comment="handleUpdateComment"
       />
 
 
@@ -540,6 +542,30 @@ export default {
         case 'extract-here':
           this.extractArchiveToCurrentDir(selectedItem)
           break
+      }
+    },
+    async handleUpdateRating(rating, game) {
+      try {
+        await this.updateGame(game.id, { rating })
+        // 更新当前游戏对象，以便详情面板立即显示新星级
+        if (this.currentGame && this.currentGame.id === game.id) {
+          this.currentGame.rating = rating
+        }
+      } catch (error: any) {
+        console.error('更新星级失败:', error)
+        alert('更新星级失败: ' + error.message)
+      }
+    },
+    async handleUpdateComment(comment, game) {
+      try {
+        await this.updateGame(game.id, { comment })
+        // 更新当前游戏对象，以便详情面板立即显示新评论
+        if (this.currentGame && this.currentGame.id === game.id) {
+          this.currentGame.comment = comment
+        }
+      } catch (error: any) {
+        console.error('更新评论失败:', error)
+        alert('更新评论失败: ' + error.message)
       }
     },
     editGame(game) {
