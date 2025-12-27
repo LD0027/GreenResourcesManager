@@ -66,12 +66,18 @@
           <!-- 动态显示发行商信息 -->
           <p class="detail-publisher" v-if="item.publisher && item.publisher !== '未知发行商'">{{ item.publisher }}</p>
           
-          <!-- 动态显示文件夹路径 -->
-          <p class="detail-folder" v-if="item.folderPath" :title="item.folderPath">{{ item.folderPath }}</p>
-          
-          <!-- 动态显示可执行文件路径（游戏专用） -->
-          <p class="detail-folder" v-if="item.executablePath && type === 'game'" :title="item.executablePath">
+          <!-- 动态显示路径（按优先级：executablePath > filePath > folderPath > url） -->
+          <p class="detail-folder" v-if="item.executablePath" :title="item.executablePath">
             {{ item.executablePath }}
+          </p>
+          <p class="detail-folder" v-else-if="item.filePath" :title="item.filePath">
+            {{ item.filePath }}
+          </p>
+          <p class="detail-folder" v-else-if="item.folderPath" :title="item.folderPath">
+            {{ item.folderPath }}
+          </p>
+          <p class="detail-folder" v-else-if="item.url" :title="item.url">
+            {{ item.url }}
           </p>
           
           <!-- 描述信息 -->
@@ -152,7 +158,7 @@ export default {
     type: {
       type: String,
       required: true,
-      validator: value => ['game', 'image', 'album', 'video', 'audio'].includes(value)
+      validator: value => ['game', 'image', 'album', 'video', 'audio', 'novel'].includes(value)
     },
     isRunning: {
       type: Boolean,
