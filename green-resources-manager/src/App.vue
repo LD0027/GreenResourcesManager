@@ -1107,6 +1107,42 @@ export default {
       }
     },
     
+    // 设置全局更新事件监听（用于显示 toast 通知）
+    setupGlobalUpdateListeners() {
+      if (window.electronAPI) {
+        console.log('[App] 正在注册全局更新事件监听器...')
+        
+        // 监听发现新版本事件（全局显示 toast）
+        window.electronAPI.onUpdateAvailable((event: any, info: any) => {
+          console.log('[App] 收到全局 update-available 事件:', info)
+          // 显示 toast 通知（需要手动关闭）
+          notificationService.info(
+            '发现新版本',
+            `版本 ${info.version} 已发布，请前往设置页面手动下载更新`,
+            { persistent: true }
+          )
+        })
+        
+        // 监听更新错误事件（处理 404 等需要手动下载的情况）
+        window.electronAPI.onUpdateError((event: any, error: any) => {
+          if (typeof error === 'object' && (error.code === 'MANUAL_DOWNLOAD_REQUIRED' || error.is404Error)) {
+            console.log('[App] 收到全局 update-error 事件（需要手动下载）:', error)
+            const errorVersion = error.version || '未知版本'
+            // 显示 toast 通知（需要手动关闭）
+            notificationService.info(
+              '发现新版本',
+              `版本 ${errorVersion} 已发布，请前往设置页面手动下载更新`,
+              { persistent: true }
+            )
+          }
+        })
+        
+        console.log('[App] 全局更新事件监听器注册完成')
+      } else {
+        console.error('[App] window.electronAPI 不可用，无法注册全局更新事件监听器')
+      }
+    },
+    
   },
   async mounted() {
     // 读取版本号
@@ -1296,6 +1332,9 @@ export default {
       this.reloadCustomPages()
     })
     
+    // 设置全局更新事件监听（用于显示 toast 通知）
+    this.setupGlobalUpdateListeners()
+    
     // 所有初始化完成，隐藏加载提示
     this.isLoading = false
     console.log('✅ 应用初始化完成')
@@ -1335,6 +1374,12 @@ export default {
     this.safetyKey.disableSafetyKey().catch((error) => {
         console.error('禁用安全键失败:', error)
       })
+    
+    // 清理全局更新事件监听器
+    if (window.electronAPI) {
+      window.electronAPI.removeAllListeners('update-available')
+      window.electronAPI.removeAllListeners('update-error')
+    }
   }
 }
 </script>

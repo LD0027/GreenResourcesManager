@@ -4,7 +4,7 @@
  *
  * 主要功能:
  * 1. 初始化自动更新服务，配置更新服务器（GitHub）。
- * 2. 定期检查更新（启动后5秒检查一次，之后每小时检查一次）。
+ * 2. 应用启动时检查更新（启动后5秒检查一次）。
  * 3. 监听更新事件（检查中、有新版本、无新版本、错误）并通知渲染进程。
  * 4. 显示更新通知（通过系统托盘显示）。
  * 5. 提供手动检查更新和安装更新的功能。
@@ -26,7 +26,7 @@
  * - 更新服务器：GitHub (klsdf/GreenResourcesManager)
  * - 自动下载：禁用（用户需手动下载）
  * - 自动安装：禁用（用户需手动安装）
- * - 检查间隔：应用启动后5秒检查一次，之后每小时检查一次
+ * - 检查时机：仅应用启动后5秒检查一次（不进行定时检查，用户可手动检查）
  */
 
 /**
@@ -109,11 +109,8 @@ function initAutoUpdater(autoUpdater, getMainWindow, displayBalloon, dialog, isD
     autoUpdater.checkForUpdatesAndNotify()
   }, 5000) // 延迟5秒，确保应用完全启动
 
-  // 设置更新检查间隔（每小时检查一次）
-  setInterval(() => {
-    console.log('[AutoUpdater] 定时检查更新...')
-    autoUpdater.checkForUpdatesAndNotify()
-  }, 60 * 60 * 1000) // 1小时 = 60 * 60 * 1000 毫秒
+  // 注意：已取消定时检查，只在应用启动时检查一次
+  // 用户可以通过设置页面手动检查更新
 
   // 监听更新检查事件
   autoUpdater.on('checking-for-update', () => {
@@ -124,9 +121,15 @@ function initAutoUpdater(autoUpdater, getMainWindow, displayBalloon, dialog, isD
     }
   })
 
+  // 跟踪是否已经检测到可用更新
+  let hasUpdateAvailable = false
+  let availableUpdateVersion = null
+
   // 监听发现新版本事件
   autoUpdater.on('update-available', (info) => {
     console.log('[AutoUpdater] 事件: update-available, 版本:', info.version)
+    hasUpdateAvailable = true
+    availableUpdateVersion = info.version
     const mainWindow = getMainWindow()
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('update-available', info)
@@ -139,6 +142,8 @@ function initAutoUpdater(autoUpdater, getMainWindow, displayBalloon, dialog, isD
   // 监听没有新版本事件
   autoUpdater.on('update-not-available', (info) => {
     console.log('[AutoUpdater] 事件: update-not-available, 版本:', info.version)
+    hasUpdateAvailable = false
+    availableUpdateVersion = null
     const mainWindow = getMainWindow()
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('update-not-available', info)
@@ -150,12 +155,31 @@ function initAutoUpdater(autoUpdater, getMainWindow, displayBalloon, dialog, isD
     console.error('[AutoUpdater] 事件: error, 错误信息:', err.message, '错误代码:', err.code)
     const mainWindow = getMainWindow()
     if (mainWindow && !mainWindow.isDestroyed()) {
-      const errorInfo = {
-        message: err.message,
-        code: err.code || 'UNKNOWN',
-        stack: err.stack
+      const errorMessage = err.message || ''
+      const is404Error = errorMessage.includes('404') || errorMessage.includes('Cannot download')
+      
+      // 如果是 404 错误且之前已经检测到可用更新，则将其标记为需要手动下载
+      // 而不是显示为错误（因为我们已经知道有新版本了）
+      if (is404Error && hasUpdateAvailable && availableUpdateVersion) {
+        console.log(`[AutoUpdater] 检测到新版本 ${availableUpdateVersion}，但更新文件不存在（404），需要手动下载`)
+        // 发送特殊的错误信息，标记为需要手动下载
+        const errorInfo = {
+          message: `新版本 ${availableUpdateVersion} 已发布，但自动更新文件不可用。请前往 GitHub 手动下载。`,
+          code: 'MANUAL_DOWNLOAD_REQUIRED',
+          version: availableUpdateVersion,
+          is404Error: true,
+          originalError: err.message
+        }
+        mainWindow.webContents.send('update-error', errorInfo)
+      } else {
+        // 其他错误正常处理
+        const errorInfo = {
+          message: err.message,
+          code: err.code || 'UNKNOWN',
+          stack: err.stack
+        }
+        mainWindow.webContents.send('update-error', errorInfo)
       }
-      mainWindow.webContents.send('update-error', errorInfo)
     }
   })
 }

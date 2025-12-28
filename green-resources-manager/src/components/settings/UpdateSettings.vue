@@ -58,7 +58,12 @@
         <div class="status-item" v-if="updateStatus.available">
           <div class="status-icon">✨</div>
           <div class="status-content">
-            <div class="status-text">发现新版本 {{ updateStatus.version }}</div>
+            <div class="status-text">
+              发现新版本 {{ updateStatus.version }}
+              <span v-if="updateStatus.manualDownload" class="manual-download-hint">
+                （需要手动下载）
+              </span>
+            </div>
             <div class="status-actions">
               <button class="btn btn-info" @click="openGitHubPage">
                 <span class="btn-icon">🌐</span>
@@ -128,15 +133,8 @@ export default {
       this.checkTimeout = null
     }
     
-    // 清理事件监听器，避免内存泄漏
-    // 注意：由于preload.js的实现限制，我们只能移除所有监听器
-    // 但这是安全的，因为只有UpdateSettings组件会注册这些监听器
-    if (window.electronAPI && window.electronAPI.removeAllListeners) {
-      window.electronAPI.removeAllListeners('update-checking')
-      window.electronAPI.removeAllListeners('update-available')
-      window.electronAPI.removeAllListeners('update-not-available')
-      window.electronAPI.removeAllListeners('update-error')
-    }
+    // 注意：不清理事件监听器，因为 App.vue 中的全局监听器需要保持活动
+    // 组件卸载不会导致内存泄漏，因为事件监听器是在 window.electronAPI 上的
   },
   methods: {
     updateSetting(key: string, value: any) {
@@ -218,16 +216,13 @@ export default {
       }
     },
     
-    // 监听自动更新事件
+    // 监听自动更新事件（仅用于更新组件状态，不显示 toast，因为 App.vue 已经全局处理了）
     setupUpdateListeners() {
       if (window.electronAPI) {
         console.log('[UpdateSettings] 正在注册更新事件监听器...')
         
-        // 先清理可能存在的旧监听器，避免重复监听
-        window.electronAPI.removeAllListeners('update-checking')
-        window.electronAPI.removeAllListeners('update-available')
-        window.electronAPI.removeAllListeners('update-not-available')
-        window.electronAPI.removeAllListeners('update-error')
+        // 注意：不清理 App.vue 中注册的全局监听器，因为它负责显示 toast
+        // 这里只监听事件来更新组件内部状态
         
         // 监听更新检查事件
         window.electronAPI.onUpdateChecking(() => {
@@ -246,6 +241,8 @@ export default {
             releaseNotes: info.releaseNotes 
           }
           this.isCheckingUpdates = false
+          
+          // 注意：不在这里显示 toast，因为 App.vue 已经全局处理了
         })
 
         // 监听没有新版本事件
@@ -260,14 +257,35 @@ export default {
         window.electronAPI.onUpdateError((event: any, error: any) => {
           console.error('[UpdateSettings] 收到 update-error 事件:', error)
           this.clearCheckTimeout() // 清除超时定时器
+          
           // 处理不同类型的错误
           let errorMessage = error
+          let is404Error = false
+          let errorVersion = null
+          
           if (typeof error === 'object') {
             errorMessage = error.message || '未知错误'
+            is404Error = error.is404Error || false
+            errorVersion = error.version || null
+            
+            // 如果是需要手动下载的错误（404），显示为可用更新而不是错误
+            if (error.code === 'MANUAL_DOWNLOAD_REQUIRED' || is404Error) {
+              this.updateStatus = { 
+                available: true, 
+                version: errorVersion || '未知版本',
+                manualDownload: true // 标记为需要手动下载
+              }
+              this.isCheckingUpdates = false
+              
+              // 注意：不在这里显示 toast，因为 App.vue 已经全局处理了
+              return
+            }
+            
             if (error.code) {
               errorMessage += ` (错误代码: ${error.code})`
             }
           }
+          
           this.updateStatus = { error: errorMessage }
           this.isCheckingUpdates = false
         })
@@ -465,6 +483,13 @@ input:checked + .toggle-slider:before {
 
 .btn-icon {
   font-size: 1rem;
+}
+
+.manual-download-hint {
+  color: var(--text-secondary);
+  font-size: 0.85em;
+  font-weight: normal;
+  margin-left: 8px;
 }
 </style>
 
