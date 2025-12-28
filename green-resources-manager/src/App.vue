@@ -269,8 +269,8 @@ export default {
         // 资源主页
         'game-home': {
           name: '应用页',
-          icon: '🎮',
-          description: '游戏资源的主页'
+          icon: '💻',
+          description: '应用资源的主页，包含游戏和软件'
         },
         'image-home': {
           name: '图片页',
@@ -364,10 +364,74 @@ export default {
         icon: this.viewConfig.home?.icon || '🏠',
         description: this.viewConfig.home?.description || '',
         children: resourceHomeChildren.map(child => {
-          // 为每个资源主页添加其对应的管理页面作为子项
+          // 特殊处理：game-home 有两个子页面（游戏和软件）
+          if (child.id === 'game-home') {
+            const gamesPage = this.pages.find(p => p.id === 'games' && !p.isHidden)
+            const softwarePage = this.pages.find(p => p.id === 'software' && !p.isHidden)
+            
+            // 调试信息：检查页面是否找到
+            if (!gamesPage) {
+              console.warn('[App.vue] 未找到 games 页面，当前 pages:', this.pages.map(p => ({ id: p.id, name: p.name, hidden: p.isHidden })))
+            }
+            if (!softwarePage) {
+              console.warn('[App.vue] 未找到 software 页面，当前 pages:', this.pages.map(p => ({ id: p.id, name: p.name, hidden: p.isHidden })))
+            }
+            
+            const subChildren = []
+            if (gamesPage) {
+              subChildren.push({
+                id: gamesPage.id,
+                name: gamesPage.name,
+                icon: gamesPage.icon,
+                description: gamesPage.description || ''
+              })
+            }
+            if (softwarePage) {
+              subChildren.push({
+                id: softwarePage.id,
+                name: softwarePage.name,
+                icon: softwarePage.icon,
+                description: softwarePage.description || ''
+              })
+            }
+            
+            return {
+              ...child,
+              children: subChildren.length > 0 ? subChildren : undefined
+            }
+          }
+          
+          // 特殊处理：image-home 有两个子页面（图片和单图）
+          if (child.id === 'image-home') {
+            const imagesPage = this.pages.find(p => p.id === 'images' && !p.isHidden)
+            const singleImagePage = this.pages.find(p => p.id === 'single-image' && !p.isHidden)
+            
+            const subChildren = []
+            if (imagesPage) {
+              subChildren.push({
+                id: imagesPage.id,
+                name: imagesPage.name,
+                icon: imagesPage.icon,
+                description: imagesPage.description || ''
+              })
+            }
+            if (singleImagePage) {
+              subChildren.push({
+                id: singleImagePage.id,
+                name: singleImagePage.name,
+                icon: singleImagePage.icon,
+                description: singleImagePage.description || ''
+              })
+            }
+            
+            return {
+              ...child,
+              children: subChildren.length > 0 ? subChildren : undefined
+            }
+          }
+          
+          // 为其他资源主页添加其对应的管理页面作为子项
           const resourceTypeMap: Record<string, string> = {
-            'game-home': 'games',
-            'image-home': 'images',
             'video-home': 'videos',
             'novel-home': 'novels',
             'website-home': 'websites',
@@ -402,7 +466,7 @@ export default {
       })
       
       // 其他独立页面（没有子项的）
-      const otherPages = this.pages.filter(p => !p.isHidden && !['games', 'images', 'videos', 'novels', 'websites', 'audio'].includes(p.id))
+      const otherPages = this.pages.filter(p => !p.isHidden && !['games', 'software', 'images', 'single-image', 'videos', 'novels', 'websites', 'audio'].includes(p.id))
       otherPages.forEach(page => {
         items.push({
           id: page.id,
@@ -587,16 +651,9 @@ export default {
         this.expandedItems.push(itemId)
       }
     },
-    // 判断菜单项是否激活（包括自身或子项激活）
+    // 判断菜单项是否激活（只检查自身，不递归检查子项）
     isItemActive(item: any): boolean {
-      if (this.$route.name === item.id) {
-        return true
-      }
-      // 检查子项是否激活
-      if (item.children) {
-        return item.children.some((child: any) => this.isItemActive(child))
-      }
-      return false
+      return this.$route.name === item.id
     },
     // 自动展开相关菜单
     autoExpandMenu(routeName: string) {
@@ -616,6 +673,7 @@ export default {
       const resourceTypeMap: Record<string, string> = {
         'games': 'game-home',
         'images': 'image-home',
+        'single-image': 'image-home',
         'videos': 'video-home',
         'novels': 'novel-home',
         'websites': 'website-home',

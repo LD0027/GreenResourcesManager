@@ -9,7 +9,7 @@ class CustomPageManager {
   private pages: PageConfig[] = [];
   private initialized = false;
   // 有效的 ResourceType 值
-  private readonly validResourceTypes: ResourceType[] = ['Game', 'Image', 'Video', 'Novel', 'Website', 'Audio'];
+  private readonly validResourceTypes: ResourceType[] = ['Game', 'Software', 'Image', 'Video', 'Novel', 'Website', 'Audio'];
 
   constructor() {
   }
@@ -71,8 +71,22 @@ class CustomPageManager {
           };
         }).filter((page): page is PageConfig => page !== null);
         
-        // 如果有页面因类型无效而被过滤掉，需要保存更新后的列表
-        if (this.pages.length !== loadedPages.length) {
+        // 检查并添加缺失的默认页面
+        const defaultPages = this.getDefaultPages();
+        const existingPageIds = new Set(this.pages.map(p => p.id));
+        let hasNewPages = false;
+        
+        for (const defaultPage of defaultPages) {
+          if (!existingPageIds.has(defaultPage.id)) {
+            // 找到缺失的默认页面，添加它
+            console.log(`[CustomPageManager] 检测到缺失的默认页面: ${defaultPage.id}，正在添加...`);
+            this.pages.push(defaultPage);
+            hasNewPages = true;
+          }
+        }
+        
+        // 如果有页面因类型无效而被过滤掉，或者添加了新的默认页面，需要保存更新后的列表
+        if (this.pages.length !== loadedPages.length || hasNewPages) {
           await this.savePages();
         }
       } else {
@@ -97,11 +111,13 @@ class CustomPageManager {
     const now = Date.now();
     return [
       { id: 'games', name: '游戏', icon: '🎮', type: 'Game', description: '可以管理游戏、应用等exe文件', isDefault: true, order: 1, createdAt: now, updatedAt: now },
-      { id: 'images', name: '图片', icon: '🖼️', type: 'Image', description: '可以管理图片文件夹，暂不支持单一图片的管理', isDefault: true, order: 2, createdAt: now, updatedAt: now },
-      { id: 'videos', name: '视频', icon: '🎬', type: 'Video', description: '可以管理单一视频和视频文件夹', isDefault: true, order: 3, createdAt: now, updatedAt: now },
-      { id: 'novels', name: '小说', icon: '📚', type: 'Novel', description: '可以管理txt文件，暂不支持其余格式', isDefault: true, order: 4, createdAt: now, updatedAt: now },
-      { id: 'websites', name: '网站', icon: '🌐', type: 'Website', description: '需要手动传入网址', isDefault: true, order: 5, createdAt: now, updatedAt: now },
-      { id: 'audio', name: '声音', icon: '🎵', type: 'Audio', description: '可以管理mp3、wav等常见音频文件', isDefault: true, order: 6, createdAt: now, updatedAt: now },
+      { id: 'software', name: '软件', icon: '💾', type: 'Software', description: '可以管理软件、应用等exe文件', isDefault: true, order: 2, createdAt: now, updatedAt: now },
+      { id: 'images', name: '漫画', icon: '🖼️', type: 'Image', description: '可以管理图片文件夹，暂不支持单一图片的管理', isDefault: true, order: 3, createdAt: now, updatedAt: now },
+      { id: 'single-image', name: '单图', icon: '🖼️', type: 'Image', description: '可以管理单一图片文件', isDefault: true, order: 4, createdAt: now, updatedAt: now },
+      { id: 'videos', name: '电影', icon: '🎬', type: 'Video', description: '可以管理单一视频', isDefault: true, order: 5, createdAt: now, updatedAt: now },
+      { id: 'novels', name: '小说', icon: '📚', type: 'Novel', description: '可以管理txt文件，暂不支持其余格式', isDefault: true, order: 6, createdAt: now, updatedAt: now },
+      { id: 'websites', name: '网站', icon: '🌐', type: 'Website', description: '需要手动传入网址', isDefault: true, order: 7, createdAt: now, updatedAt: now },
+      { id: 'audio', name: '声音', icon: '🎵', type: 'Audio', description: '可以管理mp3、wav等常见音频文件', isDefault: true, order: 8, createdAt: now, updatedAt: now },
     ];
   }
 

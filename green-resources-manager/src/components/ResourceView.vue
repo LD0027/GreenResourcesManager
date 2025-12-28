@@ -20,7 +20,9 @@ import { PageConfig } from '../types/page';
 
 // 异步加载视图组件以避免循环引用和减少初始包大小
 const GameView = defineAsyncComponent(() => import('../pages/GameView.vue'));
+const SoftwareView = defineAsyncComponent(() => import('../pages/SoftwareView.vue'));
 const ImageView = defineAsyncComponent(() => import('../pages/ImageView.vue'));
+const SingleImageView = defineAsyncComponent(() => import('../pages/SingleImageView.vue'));
 const VideoView = defineAsyncComponent(() => import('../pages/VideoView.vue'));
 const NovelView = defineAsyncComponent(() => import('../pages/NovelView.vue'));
 const WebsiteView = defineAsyncComponent(() => import('../pages/WebsiteView.vue'));
@@ -43,11 +45,19 @@ export default defineComponent({
       
       const normalizedType = props.pageConfig.type.charAt(0).toUpperCase() + props.pageConfig.type.slice(1).toLowerCase();
       
+      // 特殊处理：根据 pageConfig.id 选择不同的 Image 组件
+      if (normalizedType === 'Image') {
+        if (props.pageConfig.id === 'single-image') {
+          return SingleImageView;
+        }
+        return ImageView;
+      }
+      
       switch (normalizedType) {
         case 'Game':
           return GameView;
-        case 'Image':
-          return ImageView;
+        case 'Software':
+          return SoftwareView;
         case 'Video':
           return VideoView;
         case 'Novel':

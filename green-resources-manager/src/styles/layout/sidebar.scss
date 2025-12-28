@@ -123,12 +123,6 @@
   }
 }
 
-// 可展开的父级菜单项
-.nav-item-parent {
-  &.expanded {
-    background: rgba(255, 255, 255, 0.1);
-  }
-}
 
 // 子菜单项
 .nav-item-child {

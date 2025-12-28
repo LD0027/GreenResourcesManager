@@ -15,6 +15,7 @@ import type { ResourceType } from '../types/page'
 // 资源类型配置映射
 const resourceConfigMap: Record<ResourceType, { name: string; icon: string }> = {
   Game: { name: '游戏', icon: '🎮' },
+  Software: { name: '软件', icon: '💾' },
   Image: { name: '图片', icon: '🖼️' },
   Video: { name: '视频', icon: '🎬' },
   Novel: { name: '小说', icon: '📚' },
@@ -29,7 +30,7 @@ export default {
       type: String as () => ResourceType,
       required: true,
       validator: (value: string) => {
-        return ['Game', 'Image', 'Video', 'Novel', 'Website', 'Audio'].includes(value)
+        return ['Game', 'Software', 'Image', 'Video', 'Novel', 'Website', 'Audio'].includes(value)
       }
     }
   },

@@ -125,9 +125,9 @@ const fixedRoutes: RouteRecordRaw[] = [
       resourceType: 'Game'
     },
     meta: {
-      title: '游戏主页',
-      icon: '🎮',
-      description: '游戏资源的主页',
+      title: '应用主页',
+      icon: '💻',
+      description: '应用资源的主页',
       requiresFilter: false
     }
   },
@@ -206,6 +206,7 @@ const fixedRoutes: RouteRecordRaw[] = [
 // 资源类型到组件的映射
 const resourceTypeToComponent: Record<string, () => Promise<any>> = {
   Game: () => import('../pages/GameView.vue'),
+  Software: () => import('../pages/SoftwareView.vue'),
   Image: () => import('../pages/ImageView.vue'),
   Video: () => import('../pages/VideoView.vue'),
   Novel: () => import('../pages/NovelView.vue'),

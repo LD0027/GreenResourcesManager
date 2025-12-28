@@ -1,4 +1,4 @@
-export type ResourceType = 'Game' | 'Image' | 'Video' | 'Novel' | 'Website' | 'Audio';
+export type ResourceType = 'Game' | 'Software' | 'Image' | 'Video' | 'Novel' | 'Website' | 'Audio';
 
 export interface PageConfig {
   id: string;
