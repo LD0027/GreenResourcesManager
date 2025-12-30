@@ -4,9 +4,9 @@
 
 **另外附加了游戏化，可以让您的资源收集和管理变得像游戏一样有趣！上头！**
 
-[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/klsdf/GreenResourcesManager) [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange.svg)](LICENSE) [![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://github.com/klsdf/GreenResourcesManager) [![Vue](https://img.shields.io/badge/Vue-3.3.8-4FC08D.svg)](https://vuejs.org/) [![Electron](https://img.shields.io/badge/Electron-27.1.0-47848F.svg)](https://www.electronjs.org/)
+[![Version](https://img.shields.io/badge/version-0.6.7-blue.svg)](https://github.com/klsdf/GreenResourcesManager) [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange.svg)](LICENSE) [![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)](https://github.com/klsdf/GreenResourcesManager) [![Vue](https://img.shields.io/badge/Vue-3.3.8-4FC08D.svg)](https://vuejs.org/) [![Electron](https://img.shields.io/badge/Electron-27.1.0-47848F.svg)](https://www.electronjs.org/)
 
-[![Bilibili](https://img.shields.io/badge/bilibili-哔哩哔哩-00A1D6?logo=bilibili)](https://space.bilibili.com/36163336?spm_id_from=333.1007.0.0) [![QQ群](https://img.shields.io/badge/QQ群-群号-blue?logo=tencent-qq)](https://qm.qq.com/q/16bCL6VeTo) [![帽子社官网](https://img.shields.io/badge/帽子社-官网-orange)](https://hat-soft.top/)
+[![Bilibili](https://img.shields.io/badge/bilibili-哔哩哔哩-00A1D6?logo=bilibili)](https://space.bilibili.com/3690993813555960?spm_id_from=333.1007.0.0) [![QQ群](https://img.shields.io/badge/QQ群-群号-blue?logo=tencent-qq)](https://qm.qq.com/q/16bCL6VeTo) [![帽子社官网](https://img.shields.io/badge/帽子社-官网-orange)](https://hat-soft.top/)
 
 [English](README_EN.md) | [中文](#)
 
@@ -25,6 +25,7 @@ QQ客服群：853149421
   * [前置要求](#前置要求)
   * [绿色资源管理器的构建](#绿色资源管理器的构建)
   * [宣传视频的构建](#宣传视频的构建)
+* [第三方软件/代码声明](#第三方软件代码声明)
 * [🚀 未来规划](#-未来规划)
 * [🤝 加入我们](#-加入我们)
 
@@ -151,10 +152,10 @@ npm install
 
 ## 🚀 未来规划
 
-- [ ] **资源处理**
-  - [ ] 自动解压rar和zip
-  - [ ] 自动将文件的拓展名修改为rar
-  - [ ] 自定义解压码
+- [X] **资源处理**
+  - [X] 自动解压rar和zip
+  - [X] 自动将文件的拓展名修改为rar
+  - [X] 自定义解压码
   - [ ] 自带常用解压码
   - [ ] 一键安装常见的运行环境
 - [ ] **游戏化功能**
@@ -172,18 +173,20 @@ npm install
   - [ ] 游戏攻略
   - [ ] 游戏修改器
   - [ ] 游戏修改教程
-- [ ] flash游戏支持
+- [X] flash游戏支持
 
 ## 🤝 加入我们
 
-![帽子社](image/hat-soft.png)
+如果有开发意愿，欢迎来加入客服群@群主！让我们一起开发！
 
-帽子社是一个专注于实验游戏开发和游戏理论研究的社群，同时也会涉猎游戏相关的工具、产品开发。欢迎加入我们。
+点击链接加入群聊【GreenResourcesManager客服群】：https://qm.qq.com/q/weqIkXUN6o
 
-[点击链接加入群聊【帽子社——通知中心】](https://qm.qq.com/q/sUCdrpPNkc)
+<img src="image/qrcode_1767085224573.jpg" alt="qrcode_1767085224573" style="zoom:25%;" />
 
----
 
+
+<div align="center">
+  <img src="image/hat-soft.png" alt="HAT-SOFT" />
+</div>
 <div align="center">Made by YanChenXiang ❤️</div>
-
 [⬆ 回到顶部](#-目录)
