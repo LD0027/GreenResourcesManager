@@ -18,87 +18,17 @@
           class="sidebar-logo"
           @click="onLogoClick"
         >
-        <h1>{{ personalization.customAppTitle || '绿色资源管理器' }}</h1>
-        <p>{{ personalization.customAppSubtitle || '绿色、全能的资源管理器' }}</p>
+        <h1>{{ customAppTitle || '绿色资源管理器' }}</h1>
+        <p>{{ customAppSubtitle || '绿色、全能的资源管理器' }}</p>
         <p class="version">v{{ version }}</p>
       </div>
 
       <ul class="nav-menu">
-        <li v-for="item in navItems" :key="item.id" class="nav-item-wrapper">
-          <!-- 可展开的父级菜单项 -->
-          <div 
-            v-if="item.children && item.children.length > 0"
-            :class="['nav-item', 'nav-item-parent', { 
-              active: isItemActive(item),
-              expanded: expandedItems.includes(item.id)
-            }]"
-          >
-            <div class="nav-item-content" @click="navigateTo(item.id)">
-              <span class="nav-icon">{{ item.icon }}</span>
-              <span class="nav-text">{{ item.name }}</span>
-            </div>
-            <span 
-              class="nav-arrow" 
-              :class="{ expanded: expandedItems.includes(item.id) }"
-              @click.stop="toggleExpand(item.id)"
-            >
-              ▶
-            </span>
-          </div>
-          <!-- 普通菜单项 -->
-          <div 
-            v-else
-            :class="['nav-item', { active: $route.name === item.id }]"
-            @click="navigateTo(item.id)"
-          >
-            <span class="nav-icon">{{ item.icon }}</span>
-            <span class="nav-text">{{ item.name }}</span>
-          </div>
-          <!-- 子菜单 -->
-          <ul 
-            v-if="item.children && item.children.length > 0" 
-            class="nav-submenu"
-            :class="{ expanded: expandedItems.includes(item.id) }"
-          >
-            <li 
-              v-for="child in item.children" 
-              :key="child.id"
-              class="nav-submenu-item"
-            >
-              <!-- 子项本身（资源页面） -->
-              <div
-                :class="['nav-item', 'nav-item-child', { active: isItemActive(child) }]"
-                @click.stop="navigateTo(child.id)"
-              >
-                <span class="nav-icon">{{ child.icon }}</span>
-                <span class="nav-text">{{ child.name }}</span>
-                <span 
-                  v-if="child.children && child.children.length > 0"
-                  class="nav-arrow" 
-                  :class="{ expanded: expandedItems.includes(child.id) }"
-                  @click.stop="toggleExpand(child.id)"
-                >
-                  ▶
-                </span>
-              </div>
-              <!-- 子项的子菜单（如果有三级菜单） -->
-              <ul 
-                v-if="child.children && child.children.length > 0" 
-                class="nav-submenu nav-submenu-level2"
-                :class="{ expanded: expandedItems.includes(child.id) }"
-              >
-                <li 
-                  v-for="grandchild in child.children" 
-                  :key="grandchild.id"
-                  :class="['nav-item', 'nav-item-child', 'nav-item-grandchild', { active: $route.name === grandchild.id }]"
-                  @click.stop="navigateTo(grandchild.id)"
-                >
-                  <span class="nav-icon">{{ grandchild.icon }}</span>
-                  <span class="nav-text">{{ grandchild.name }}</span>
-                </li>
-              </ul>
-            </li>
-          </ul>
+        <li v-for="item in navItems" :key="item.id" 
+          :class="{ active: $route.name === item.id }"
+          @click="navigateTo(item.id)" class="nav-item">
+          <span class="nav-icon">{{ item.icon }}</span>
+          <span class="nav-text">{{ item.name }}</span>
         </li>
       </ul>
 
@@ -135,12 +65,12 @@
         </div>
 
         <!-- 页面内容区域 -->
-        <div class="page-content" :class="{ 'has-background': backgroundImage.backgroundImageUrl.value }" :style="backgroundImage.pageContentStyle.value">
+        <div class="page-content" :class="{ 'has-background': backgroundImageUrl }" :style="pageContentStyle">
           <router-view 
             ref="routerView"
             @filter-data-updated="updateFilterData"
             @navigate="navigateTo"
-            @theme-changed="theme.applyTheme"
+            @theme-changed="onThemeChanged"
           />
         </div>
       </div>
@@ -159,11 +89,6 @@ import GlobalAudioPlayer from './components/GlobalAudioPlayer.vue'
 import ToastNotification from './components/ToastNotification.vue'
 import FilterSidebar from './components/FilterSidebar.vue'
 import { updateDynamicRoutes } from './router/index'
-import { useSafetyKey } from './composables/useSafetyKey'
-import { useTheme } from './composables/useTheme'
-import { useBackgroundImage } from './composables/useBackgroundImage'
-import { usePersonalization } from './composables/usePersonalization'
-import { useGameRunningStore } from './stores/game-running'
 
 
 import notificationService from './utils/NotificationService.ts'
@@ -180,49 +105,9 @@ export default {
     ToastNotification,
     FilterSidebar
   },
-  setup() {
-    // 使用安全键管理 composable
-    const safetyKey = useSafetyKey()
-    let cleanupSafetyKeyListener: (() => void) | null = null
-    
-    // 使用主题管理 composable
-    const theme = useTheme()
-    
-    // 使用背景图片管理 composable
-    const backgroundImage = useBackgroundImage()
-    
-    // 使用个性化设置 composable
-    const personalization = usePersonalization()
-    
-    // 使用游戏运行状态 store（渐进式迁移）
-    const gameRunningStore = useGameRunningStore()
-    
-    // 清理函数存储
-    let cleanupPersonalization: (() => void) | null = null
-    let cleanupBackgroundImage: (() => void) | null = null
-    
-    return {
-      safetyKey,
-      theme,
-      backgroundImage,
-      personalization,
-      gameRunningStore,
-      setCleanupSafetyKeyListener: (cleanup: () => void) => {
-        cleanupSafetyKeyListener = cleanup
-      },
-      getCleanupSafetyKeyListener: () => cleanupSafetyKeyListener,
-      setCleanupPersonalization: (cleanup: () => void) => {
-        cleanupPersonalization = cleanup
-      },
-      getCleanupPersonalization: () => cleanupPersonalization,
-      setCleanupBackgroundImage: (cleanup: () => void) => {
-        cleanupBackgroundImage = cleanup
-      },
-      getCleanupBackgroundImage: () => cleanupBackgroundImage
-    }
-  },
   data() {
     return {
+      theme: 'light',
       version: '0.0.0',
       isLoading: true, // 应用加载状态
       isInitialized: false, // 存档系统是否已初始化
@@ -233,10 +118,14 @@ export default {
       currentFilterData: {
         filters: []
       },
-      // 定时器管理（定时器由 App.vue 管理，因为需要调用 App.vue 的方法）
-      statusCheckIntervalId: null as number | null,
-      playtimeUpdateIntervalId: null as number | null,
-      playtimeSaveIntervalId: null as number | null,
+      // 全局游戏运行状态管理
+      runningGames: new Map(), // 存储正在运行的游戏信息 {gameId: {id, pid, windowTitles: string[], gameName, startTime}}
+      statusCheckInterval: null, // 定期检查运行状态的定时器
+      playtimeUpdateInterval: null, // 定期更新游戏时长的定时器（每1秒）
+      playtimeSaveInterval: null, // 定期保存游戏时长的定时器（每1分钟）
+      // 保存队列管理
+      saveQueue: [], // 保存任务队列
+      isProcessingSaveQueue: false, // 是否正在处理保存队列
       // 应用使用时长跟踪
       appSessionStartTime: null, // 应用会话开始时间
       appUsageTimer: null, // 应用使用时长定时器
@@ -246,25 +135,27 @@ export default {
       winRARInstalled: false,
       winRARPath: null as string | null,
       winRARExecutable: null as string | null,
+      // 安全键相关
+      safetyKeyEnabled: false,
+      safetyKeyUrl: '',
       // 自动备份相关
       autoBackupInterval: 0, // 自动备份时间间隔（分钟），0表示禁用
       autoBackupTimer: null, // 自动备份定时器
       lastBackupTime: null, // 上次备份时间
+      // 个性化设置
+      customAppTitle: '', // 自定义软件标题
+      customAppSubtitle: '', // 自定义软件副标题
+      // 背景图片相关
+      backgroundImagePath: '', // 背景图片路径
+      backgroundImageUrl: '', // 背景图片URL（用于显示）
       // 统一的页面配置
       pages: [], // 动态页面配置
-      // 导航展开状态
-      expandedItems: ['home'] as string[], // 默认展开主页
       viewConfig: {
         // 固定页面
         home: {
-          name: '资源管理',
+          name: '主页',
           icon: '🏠',
           description: '欢迎页面，快速访问各个功能模块'
-        },
-        search: {
-          name: '搜索',
-          icon: '🔍',
-          description: '在所有资源中搜索内容'
         },
         users: {
           name: '用户',
@@ -309,52 +200,7 @@ export default {
     // 主导航页面ID列表
     mainNavViewIds() {
       // 隐藏页面不出现在导航中
-      // 包含主页和动态页面
       return ['home', ...this.pages.filter(p => !p.isHidden).map(p => p.id)]
-    },
-    // 构建嵌套导航结构
-    navItems() {
-      const items: any[] = []
-      
-      // 获取所有资源页面（默认页面）
-      const resourcePages = this.pages.filter(p => !p.isHidden && ['games', 'software', 'images', 'single-image', 'videos', 'anime-series', 'novels', 'websites', 'audio'].includes(p.id))
-      
-      // 获取其他页面（非资源页面）
-      const otherPages = this.pages.filter(p => !p.isHidden && !['games', 'software', 'images', 'single-image', 'videos', 'anime-series', 'novels', 'websites', 'audio'].includes(p.id))
-      
-      // 主页项（包含资源页面和其他页面作为子项）
-      const homeChildren = [
-        ...resourcePages.map(page => ({
-          id: page.id,
-          name: page.name,
-          icon: page.icon,
-          description: page.description || ''
-        })),
-        ...otherPages.map(page => ({
-          id: page.id,
-          name: page.name,
-          icon: page.icon,
-          description: page.description || ''
-        }))
-      ]
-      
-      items.push({
-        id: 'home',
-        name: this.viewConfig.home?.name || '主页',
-        icon: this.viewConfig.home?.icon || '🏠',
-        description: this.viewConfig.home?.description || '',
-        children: homeChildren
-      })
-      
-      // 搜索项（主页下方，同级别）
-      items.push({
-        id: 'search',
-        name: this.viewConfig.search?.name || '搜索',
-        icon: this.viewConfig.search?.icon || '🔍',
-        description: this.viewConfig.search?.description || ''
-      })
-      
-      return items
     },
     // 底部导航页面ID列表
     footerViews() {
@@ -364,6 +210,14 @@ export default {
     logoIcon() {
       return this.isLogoClicked ? './hide-icon.png' : './butter-icon.png'
     },
+    // 页面内容区域的样式（包含背景图片）
+    pageContentStyle() {
+      const style: any = {}
+      if (this.backgroundImageUrl) {
+        style['--bg-image-url'] = `url(${this.backgroundImageUrl})`
+      }
+      return style
+    }
   },
   methods: {
     // 点击 logo 的处理方法
@@ -490,7 +344,13 @@ export default {
           }
         })
 
-        // 导航项现在通过 computed 属性自动计算，无需手动设置
+        // 刷新导航项
+        this.navItems = this.mainNavViewIds.map(viewId => ({
+          id: viewId,
+          name: this.viewConfig[viewId]?.name || viewId,
+          icon: this.viewConfig[viewId]?.icon || '📄',
+          description: this.viewConfig[viewId]?.description || ''
+        }))
 
         // 更新动态路由
         if (this.$router) {
@@ -520,29 +380,6 @@ export default {
         }
       })
     },
-    // 切换展开/折叠状态
-    toggleExpand(itemId: string) {
-      const index = this.expandedItems.indexOf(itemId)
-      if (index > -1) {
-        this.expandedItems.splice(index, 1)
-      } else {
-        this.expandedItems.push(itemId)
-      }
-    },
-    // 判断菜单项是否激活（只检查自身，不递归检查子项）
-    isItemActive(item: any): boolean {
-      return this.$route.name === item.id
-    },
-    // 自动展开相关菜单
-    autoExpandMenu(routeName: string) {
-      // 如果路由名称在 pages 中（包括资源页面和其他页面），都应该展开 home
-      const pageIds = this.pages.filter(p => !p.isHidden).map(p => p.id)
-      if (pageIds.includes(routeName) || routeName === 'home') {
-        if (!this.expandedItems.includes('home')) {
-          this.expandedItems.push('home')
-        }
-      }
-    },
     // switchView(viewId: string) {
     //   // 兼容旧代码，重定向到 navigateTo
     //   this.navigateTo(viewId)
@@ -559,83 +396,152 @@ export default {
     },
     onFilterSelect({ filterKey, itemName }) {
       console.log('App.vue onFilterSelect:', filterKey, itemName)
-      // 直接转发事件到当前页面，不处理筛选器状态
-      this.notifyCurrentView('filter-select', { filterKey, itemName })
+      // 通过全局事件发送筛选器事件
+      window.dispatchEvent(new CustomEvent('filter-select', {
+        detail: { filterKey, itemName }
+      }))
     },
     onFilterExclude({ filterKey, itemName }) {
       console.log('App.vue onFilterExclude:', filterKey, itemName)
-      // 直接转发事件到当前页面，不处理筛选器状态
-      this.notifyCurrentView('filter-exclude', { filterKey, itemName })
+      // 通过全局事件发送筛选器事件
+      window.dispatchEvent(new CustomEvent('filter-exclude', {
+        detail: { filterKey, itemName }
+      }))
     },
     onFilterClear(filterKey) {
       console.log('App.vue onFilterClear:', filterKey)
-      // 直接转发事件到当前页面，不处理筛选器状态
-      this.notifyCurrentView('filter-clear', filterKey)
+      // 通过全局事件发送筛选器事件
+      window.dispatchEvent(new CustomEvent('filter-clear', {
+        detail: filterKey
+      }))
     },
-    notifyCurrentView(event, data) {
-      // 通知当前页面筛选器状态变化（通过 router-view 获取当前组件）
-      const routerView = this.$refs.routerView as any
-      if (routerView && routerView.$vnode && routerView.$vnode.componentInstance) {
-        const currentViewRef = routerView.$vnode.componentInstance
-        if (currentViewRef.$refs && currentViewRef.$refs.innerView) {
-          const innerView = currentViewRef.$refs.innerView
-          if (innerView && innerView.handleFilterEvent) {
-            innerView.handleFilterEvent(event, data)
-          }
-          if (innerView && innerView.updateFilterData) {
-            innerView.updateFilterData()
-          }
-        } else if (currentViewRef.handleFilterEvent) {
-        currentViewRef.handleFilterEvent(event, data)
-      }
-      if (currentViewRef && currentViewRef.updateFilterData) {
-        currentViewRef.updateFilterData()
-      }
-      }
-    },
-    // 全局游戏运行状态管理方法（仅使用 store）
+    // 全局游戏运行状态管理方法
     addRunningGame(gameInfo) {
-      // 添加游戏到 store（不再需要 initialPlayTime，使用时直接从 game.playTime 获取）
-      this.gameRunningStore.addRunningGame({
+      // gameInfo: { id: string, pid: number, windowTitles?: string[], gameName?: string }
+      const runtimeGameData = {
         id: gameInfo.id,
         pid: gameInfo.pid,
         windowTitles: gameInfo.windowTitles || [],
-        gameName: gameInfo.gameName || null
-      })
-      
-      console.log('✅ 添加运行游戏:', gameInfo.id, '当前运行游戏:', this.gameRunningStore.runningGameIds)
+        gameName: gameInfo.gameName || null,
+        startTime: Date.now()
+      }
+      this.runningGames.set(gameInfo.id, runtimeGameData)
+      console.log('全局添加运行游戏:', runtimeGameData, '当前运行游戏:', Array.from(this.runningGames.keys()))
     },
     removeRunningGame(gameId) {
       console.log(`[DEBUG] 🗑️ removeRunningGame 被调用，gameId: ${gameId}`)
+      const runtimeGameData = this.runningGames.get(gameId)
+      if (runtimeGameData) {
+        // 计算本次会话的游戏时长
+        const sessionDuration = Math.floor((Date.now() - runtimeGameData.startTime) / 1000) // 转换为秒
+        console.log(`[DEBUG] ⏱️ 游戏 ${gameId} 本次会话时长: ${sessionDuration} 秒`, '游戏信息:', runtimeGameData)
+        
+        // 通知 GameView 更新游戏时长，游戏结束时需要保存
+        console.log(`[DEBUG] 💾 调用 updateGamePlayTime，gameId: ${gameId}, sessionDuration: ${sessionDuration}, shouldSave: true`)
+        this.updateGamePlayTime(gameId, sessionDuration, true)
+      } else {
+        console.log(`[DEBUG] ⚠️ removeRunningGame: 未找到 gameId ${gameId} 的运行数据`)
+      }
       
-      // 通过事件通知 GameView 计算并更新最终总时长（GameView 中有 game.playTime）
-      window.dispatchEvent(new CustomEvent('game-request-final-playtime', {
-        detail: { gameId }
-      }))
-      
-      this.gameRunningStore.removeRunningGame(gameId)
-      console.log(`[DEBUG] ✅ 已从 store 中移除 gameId: ${gameId}，当前运行游戏:`, this.gameRunningStore.runningGameIds)
+      this.runningGames.delete(gameId)
+      console.log(`[DEBUG] ✅ 已从 runningGames 中移除 gameId: ${gameId}，当前运行游戏:`, Array.from(this.runningGames.keys()))
     },
     isGameRunning(gameId) {
-      return this.gameRunningStore.isGameRunning(gameId)
+      return this.runningGames.has(gameId)
     },
-    // 更新游戏时长（通过事件通知，发送总时长，不累加）
-    updateGamePlayTime(gameId, totalPlayTime, shouldSave = false) {
-      // 发送自定义事件，让 GameView 直接设置总时长（不累加）
-      window.dispatchEvent(new CustomEvent('game-playtime-update', {
-        detail: {
-          gameId,
-          totalPlayTime, // 总时长，不是增量
-          shouldSave
-        }
-      }))
+    // 更新游戏时长（只更新内存，不立即保存）
+    updateGamePlayTime(gameId, sessionDuration, shouldSave = false) {
+      const gameView = this.$refs.gameView
+      if (!gameView || !gameView.games) {
+        console.log('游戏视图不可用，无法更新游戏时长')
+        return
+      }
       
-      // 如果需要保存，通过事件通知保存
+      const game = gameView.games.find(g => g.id === gameId)
+      if (game) {
+        // 累加游戏时长
+        game.playTime = (game.playTime || 0) + sessionDuration
+        
+        // 只有在 shouldSave 为 true 时才保存（游戏结束时）
         if (shouldSave) {
-        window.dispatchEvent(new CustomEvent('game-playtime-save', {
-          detail: { gameId }
-        }))
+          this.saveGamesSafely(gameView)
+          console.log(`游戏 ${game.name} 总时长更新为: ${game.playTime} 秒 (本次增加: ${sessionDuration} 秒)，已保存`)
+        } else {
+          // console.log(`游戏 ${game.name} 总时长更新为: ${game.playTime} 秒 (本次增加: ${sessionDuration} 秒)，暂存内存`)
+        }
+      } else {
+        console.warn('未找到对应的游戏:', gameId)
+      }
+    },
+    // 安全保存游戏数据（使用队列机制，防止并发写入）
+    async saveGamesSafely(gameView) {
+      // 将保存任务添加到队列
+      return new Promise((resolve, reject) => {
+        const saveTask = {
+          gameView,
+          resolve,
+          reject,
+          timestamp: Date.now()
+        }
+        
+        this.saveQueue.push(saveTask)
+        console.log(`📝 保存任务已加入队列，当前队列长度: ${this.saveQueue.length}`)
+        
+        // 如果队列处理程序没有运行，启动它
+        if (!this.isProcessingSaveQueue) {
+          this.processSaveQueue()
+        }
+      })
+    },
+    // 处理保存队列（按顺序执行保存任务）
+    async processSaveQueue() {
+      if (this.isProcessingSaveQueue) {
+        return // 已经在处理中，避免重复启动
+      }
+      
+      this.isProcessingSaveQueue = true
+      console.log('🔄 开始处理保存队列')
+      
+      while (this.saveQueue.length > 0) {
+        const task = this.saveQueue.shift() // 从队列头部取出任务
+        
+        if (!task || !task.gameView) {
+          console.warn('⚠️ 无效的保存任务，跳过')
+          if (task && task.reject) {
+            task.reject(new Error('无效的保存任务'))
           }
+          continue
+        }
+        
+        try {
+          console.log(`💾 执行保存任务 (队列剩余: ${this.saveQueue.length})`)
+          
+          if (typeof task.gameView.saveGames === 'function') {
+            await task.gameView.saveGames()
+            console.log('✅ 保存任务完成')
+            
+            if (task.resolve) {
+              task.resolve()
+            }
+          } else {
+            throw new Error('gameView.saveGames 方法不可用')
+          }
+        } catch (error) {
+          console.error('❌ 保存任务失败:', error)
+          
+          if (task.reject) {
+            task.reject(error)
+          }
+        }
+        
+        // 任务之间稍作延迟，避免过于频繁的写入
+        if (this.saveQueue.length > 0) {
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+      }
+      
+      this.isProcessingSaveQueue = false
+      console.log('✅ 保存队列处理完成')
     },
     // 更新运行游戏的窗口标题列表
     async updateRunningGamesWindowTitles() {
@@ -644,8 +550,7 @@ export default {
         return
       }
       
-      const runningGamesMap = this.gameRunningStore.getRunningGamesMap()
-      const runningGamesToUpdate: Array<[string, any]> = Array.from(runningGamesMap.entries())
+      const runningGamesToUpdate: Array<[string, any]> = Array.from(this.runningGames.entries())
       
       for (const [gameId, runtimeGameData] of runningGamesToUpdate) {
         try {
@@ -663,7 +568,7 @@ export default {
             // 如果有新增的窗口标题，更新数据
             if (allTitles.length !== oldTitles.length || 
                 allTitles.some(title => !oldTitles.includes(title))) {
-              this.gameRunningStore.updateGameWindowTitles(gameId, allTitles)
+              runtimeGameData.windowTitles = allTitles
               console.log(`✅ 更新游戏 ${runtimeGameData.gameName || gameId} 的窗口标题列表:`, allTitles)
             }
           }
@@ -673,23 +578,35 @@ export default {
         }
       }
     },
-    // 检查所有游戏的运行状态（不依赖 GameView，只检查进程）
+    // 检查所有游戏的运行状态
     async checkAllGamesRunningStatus() {
       if (!window.electronAPI || !window.electronAPI.getAllWindowTitlesByPID) {
         console.log('无法检查游戏运行状态：Electron API 不可用')
         return
       }
       
-      const runningGamesMap = this.gameRunningStore.getRunningGamesMap()
-      const runningGamesSize = runningGamesMap.size
-      console.log(`[DEBUG] 🔍 开始检查所有游戏的运行状态，当前运行游戏数量: ${runningGamesSize}`)
-      const runningGamesToCheck: Array<[string, any]> = Array.from(runningGamesMap.entries())
+      const gameView = this.$refs.gameView
+      if (!gameView || !gameView.games) {
+        console.log('游戏视图不可用，跳过状态检查')
+        return
+      }
+      
+      console.log(`[DEBUG] 🔍 开始检查所有游戏的运行状态，当前运行游戏数量: ${this.runningGames.size}`)
+      const runningGamesToCheck: Array<[string, any]> = Array.from(this.runningGames.entries())
       console.log(`[DEBUG] 📋 待检查的游戏列表:`, runningGamesToCheck.map(([id, data]) => ({ id, pid: data.pid, gameName: data.gameName })))
       
       for (const [gameId, runtimeGameData] of runningGamesToCheck) {
+        const game = gameView.games.find(g => g.id === gameId)
+        if (!game) {
+          // 游戏不存在，从运行列表中移除
+          this.runningGames.delete(gameId)
+          console.log(`游戏 ${gameId} 不存在，从运行列表中移除`)
+          continue
+        }
+        
         try {
           // 通过 PID 检查游戏进程是否还在运行（尝试获取窗口标题，如果失败说明进程已结束）
-          console.log(`[DEBUG] 🔍 检查游戏 ${runtimeGameData.gameName || gameId} (ID: ${gameId}, PID: ${runtimeGameData.pid}) 的运行状态...`)
+          console.log(`[DEBUG] 🔍 检查游戏 ${game.name} (ID: ${gameId}, PID: ${runtimeGameData.pid}) 的运行状态...`)
           const result = await window.electronAPI.getAllWindowTitlesByPID(runtimeGameData.pid)
           console.log(`[DEBUG] 📋 getAllWindowTitlesByPID 结果:`, { success: result.success, windowTitles: result.windowTitles, error: result.error })
           
@@ -699,33 +616,27 @@ export default {
             console.log(`[DEBUG] ⚠️ 无法获取窗口标题，之前记录的窗口标题:`, runtimeGameData.windowTitles)
             if (runtimeGameData.windowTitles && runtimeGameData.windowTitles.length > 0) {
               // 之前有窗口，现在获取不到，可能是进程结束了
-              console.log(`[DEBUG] 🔴 游戏 ${runtimeGameData.gameName || gameId} 进程已结束（之前有窗口但现在获取不到），从运行列表中移除`)
+              console.log(`[DEBUG] 🔴 游戏 ${game.name} 进程已结束（之前有窗口但现在获取不到），从运行列表中移除`)
               this.removeRunningGame(gameId)
             } else {
-              console.log(`[DEBUG] ⚠️ 游戏 ${runtimeGameData.gameName || gameId} 之前没有窗口标题，无法判断进程是否结束，保留运行状态`)
+              console.log(`[DEBUG] ⚠️ 游戏 ${game.name} 之前没有窗口标题，无法判断进程是否结束，保留运行状态`)
             }
           } else {
-            console.log(`[DEBUG] ✅ 游戏 ${runtimeGameData.gameName || gameId} 进程仍在运行，窗口标题:`, result.windowTitles)
+            console.log(`[DEBUG] ✅ 游戏 ${game.name} 进程仍在运行，窗口标题:`, result.windowTitles)
           }
         } catch (error) {
-          console.error(`[DEBUG] ❌ 检查游戏 ${runtimeGameData.gameName || gameId} 运行状态失败:`, error)
+          console.error(`[DEBUG] ❌ 检查游戏 ${game.name} 运行状态失败:`, error)
           // 出错时保守处理，保留运行状态
         }
       }
       
-      console.log('游戏运行状态检查完成，正在运行的游戏:', this.gameRunningStore.runningGameIds)
+      console.log('游戏运行状态检查完成，正在运行的游戏:', Array.from(this.runningGames.keys()))
     },
     // 启动定期检查运行状态
     startPeriodicStatusCheck() {
-      // 先清理旧的定时器
-      if (this.statusCheckIntervalId !== null) {
-        clearInterval(this.statusCheckIntervalId)
-      }
-      
-      // 定时器由 App.vue 管理，因为需要调用 App.vue 的方法
-      this.statusCheckIntervalId = window.setInterval(async () => {
-        const runningGamesMap = this.gameRunningStore.getRunningGamesMap()
-        if (runningGamesMap.size > 0) {
+      // 每30秒检查一次运行状态
+      this.statusCheckInterval = setInterval(async () => {
+        if (this.runningGames.size > 0) {
           console.log('定期检查游戏运行状态...')
           await this.checkAllGamesRunningStatus()
           // 同时更新窗口标题列表（检测新创建的窗口）
@@ -735,93 +646,81 @@ export default {
     },
     // 启动定期更新游戏时长
     startPeriodicPlaytimeUpdate() {
-      console.log(`[startPeriodicPlaytimeUpdate] 🚀 启动定期更新游戏时长`)
-      
-      // 先清理旧的定时器
-      if (this.playtimeUpdateIntervalId !== null) {
-        console.log(`[startPeriodicPlaytimeUpdate] 清理旧的更新定时器:`, this.playtimeUpdateIntervalId)
-        clearInterval(this.playtimeUpdateIntervalId)
-      }
-      if (this.playtimeSaveIntervalId !== null) {
-        console.log(`[startPeriodicPlaytimeUpdate] 清理旧的保存定时器:`, this.playtimeSaveIntervalId)
-        clearInterval(this.playtimeSaveIntervalId)
-      }
-      
       // 每1秒更新一次游戏时长（只更新内存）
-      this.playtimeUpdateIntervalId = window.setInterval(() => {
-        const runningGamesMap = this.gameRunningStore.getRunningGamesMap()
-        const runningGamesCount = runningGamesMap.size
-        // console.log(`[定时器-更新] 检查运行游戏数量:`, runningGamesCount)
-        
-        if (runningGamesCount > 0) {
-          // console.log(`[定时器-更新] 有运行游戏，调用 updateRunningGamesPlaytime`)
+      this.playtimeUpdateInterval = setInterval(() => {
+        if (this.runningGames.size > 0) {
           this.updateRunningGamesPlaytime()
-        } else {
-          // console.log(`[定时器-更新] 没有运行游戏，跳过`)
         }
       }, 1000) // 1秒
       
-      console.log(`[startPeriodicPlaytimeUpdate] ✅ 更新定时器已启动:`, this.playtimeUpdateIntervalId)
-      
       // 每1分钟保存一次游戏时长
-      this.playtimeSaveIntervalId = window.setInterval(() => {
-        const runningGamesMap = this.gameRunningStore.getRunningGamesMap()
-        const runningGamesCount = runningGamesMap.size
-        console.log(`[定时器-保存] 检查运行游戏数量:`, runningGamesCount)
-        
-        if (runningGamesCount > 0) {
-          console.log(`[定时器-保存] 有运行游戏，调用 saveRunningGamesPlaytime`)
+      this.playtimeSaveInterval = setInterval(() => {
+        if (this.runningGames.size > 0) {
           this.saveRunningGamesPlaytime()
-        } else {
-          console.log(`[定时器-保存] 没有运行游戏，跳过`)
         }
       }, 60000) // 60秒 = 1分钟
-      
-      console.log(`[startPeriodicPlaytimeUpdate] ✅ 保存定时器已启动:`, this.playtimeSaveIntervalId)
     },
-    // 更新正在运行游戏的时长（通过事件通知 GameView 计算并更新）
+    // 更新正在运行游戏的时长（只更新内存，不保存）
     updateRunningGamesPlaytime() {
-      const runningGamesMap = this.gameRunningStore.getRunningGamesMap()
+      const now = Date.now()
       
-      if (runningGamesMap.size === 0) {
-        return
-      }
-      
-      // 通过事件通知 GameView 更新所有运行中游戏的时长（GameView 中有 game.playTime，可以直接计算）
-      for (const [gameId] of runningGamesMap) {
-        window.dispatchEvent(new CustomEvent('game-request-update-playtime', {
-          detail: { gameId }
-        }))
+      for (const [gameId, runtimeGameData] of this.runningGames) {
+        if (runtimeGameData.startTime) {
+          const sessionDuration = Math.floor((now - runtimeGameData.startTime) / 1000)
+          
+          // 更新会话开始时间（重置计时器）
+          runtimeGameData.startTime = now
+          
+          // 更新游戏时长（不保存，只更新内存）
+          this.updateGamePlayTime(gameId, sessionDuration, false)
+        }
       }
     },
     // 保存正在运行游戏的时长（每1分钟执行一次）
     async saveRunningGamesPlaytime() {
-      // 通过事件通知 GameView 保存数据
-      const runningGamesMap = this.gameRunningStore.getRunningGamesMap()
-      for (const [gameId] of runningGamesMap) {
-        window.dispatchEvent(new CustomEvent('game-playtime-save', {
-          detail: { gameId }
-        }))
+      const gameView = this.$refs.gameView
+      if (!gameView || !gameView.games) {
+        console.log('游戏视图不可用，无法保存游戏时长')
+        return
+      }
+      
+      // 检查是否有正在运行的游戏需要保存
+      let hasRunningGames = false
+      for (const [gameId] of this.runningGames) {
+        const game = gameView.games.find(g => g.id === gameId)
+        if (game) {
+          hasRunningGames = true
+          break
+        }
+      }
+      
+      if (hasRunningGames) {
+        try {
+          await this.saveGamesSafely(gameView)
+          console.log('✅ 定期保存游戏时长完成（每1分钟）')
+        } catch (error) {
+          console.error('定期保存游戏时长失败:', error)
+        }
       }
     },
     // 停止定期检查
     stopPeriodicStatusCheck() {
-      if (this.statusCheckIntervalId !== null) {
-        clearInterval(this.statusCheckIntervalId)
-        this.statusCheckIntervalId = null
+      if (this.statusCheckInterval) {
+        clearInterval(this.statusCheckInterval)
+        this.statusCheckInterval = null
         console.log('已停止定期检查游戏运行状态')
       }
     },
     // 停止定期更新游戏时长
     stopPeriodicPlaytimeUpdate() {
-      if (this.playtimeUpdateIntervalId !== null) {
-        clearInterval(this.playtimeUpdateIntervalId)
-        this.playtimeUpdateIntervalId = null
+      if (this.playtimeUpdateInterval) {
+        clearInterval(this.playtimeUpdateInterval)
+        this.playtimeUpdateInterval = null
         console.log('已停止定期更新游戏时长')
       }
-      if (this.playtimeSaveIntervalId !== null) {
-        clearInterval(this.playtimeSaveIntervalId)
-        this.playtimeSaveIntervalId = null
+      if (this.playtimeSaveInterval) {
+        clearInterval(this.playtimeSaveInterval)
+        this.playtimeSaveInterval = null
         console.log('已停止定期保存游戏时长')
       }
     },
@@ -861,6 +760,56 @@ export default {
       const config = this.viewConfig[route.name as string]
       return config?.description || '无描述'
     },
+    async applyBackgroundImage(imagePath: string) {
+      try {
+        this.backgroundImagePath = imagePath
+        // 使用 readFileAsDataUrl 或 getFileUrl 获取图片URL
+        if (window.electronAPI && window.electronAPI.readFileAsDataUrl) {
+          const dataUrl = await window.electronAPI.readFileAsDataUrl(imagePath)
+          if (dataUrl) {
+            this.backgroundImageUrl = dataUrl
+            console.log('背景图片已应用:', imagePath)
+            return
+          }
+        }
+        // 降级到 getFileUrl
+        if (window.electronAPI && window.electronAPI.getFileUrl) {
+          const result = await window.electronAPI.getFileUrl(imagePath)
+          if (result && result.success && result.url) {
+            this.backgroundImageUrl = result.url
+            console.log('背景图片已应用（通过getFileUrl）:', imagePath)
+            return
+          }
+        }
+        // 如果都失败了，尝试直接使用路径（可能不工作，但至少不会报错）
+        console.warn('无法获取背景图片URL，尝试使用原始路径:', imagePath)
+        this.backgroundImageUrl = imagePath
+      } catch (error) {
+        console.error('应用背景图片失败:', error)
+        this.backgroundImageUrl = ''
+      }
+    },
+    
+    applyTheme(theme) {
+      this.theme = theme
+
+      // 处理跟随系统主题
+      let actualTheme = theme
+      if (theme === 'auto') {
+        // 检测系统主题偏好
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        actualTheme = prefersDark ? 'dark' : 'light'
+      }
+
+      // 应用实际主题
+      document.documentElement.setAttribute('data-theme', actualTheme)
+      localStorage.setItem('butter-manager-theme', theme)
+
+      console.log('应用主题:', theme, '实际主题:', actualTheme)
+    },
+    onThemeChanged(theme) {
+      this.theme = theme
+    },
     onAudioStarted(audio) {
       console.log('🎵 全局音频播放器开始播放:', audio.name)
       // 可以在这里添加额外的逻辑，比如显示通知等
@@ -898,6 +847,19 @@ export default {
       return 'home' // 默认返回主页
     },
     
+    // 加载安全键设置
+    async loadSafetyKeySettings() {
+      try {
+        const settings = await saveManager.loadSettings()
+        if (settings) {
+          this.safetyKeyEnabled = settings.safetyKeyEnabled || false
+          this.safetyKeyUrl = settings.safetyKeyUrl || 'https://www.bilibili.com/video/BV1jR4y1M78W/?p=17&share_source=copy_web&vd_source=7de8c277f16e8e03b48a5328dddfe2ce&t=466'
+          this.setupSafetyKeyListener()
+        }
+      } catch (error) {
+        console.warn('加载安全键设置失败:', error)
+      }
+    },
     
     // 加载自动备份设置
     async loadAutoBackupSettings() {
@@ -1014,42 +976,21 @@ export default {
       }
     },
     
-    // 设置全局更新事件监听（用于显示 toast 通知）
-    setupGlobalUpdateListeners() {
-      if (window.electronAPI) {
-        console.log('[App] 正在注册全局更新事件监听器...')
-        
-        // 监听发现新版本事件（全局显示 toast）
-        window.electronAPI.onUpdateAvailable((event: any, info: any) => {
-          console.log('[App] 收到全局 update-available 事件:', info)
-          // 显示 toast 通知（需要手动关闭）
-          notificationService.info(
-            '发现新版本',
-            `版本 ${info.version} 已发布，请前往设置页面手动下载更新`,
-            { persistent: true }
-          )
-        })
-        
-        // 监听更新错误事件（处理 404 等需要手动下载的情况）
-        window.electronAPI.onUpdateError((event: any, error: any) => {
-          if (typeof error === 'object' && (error.code === 'MANUAL_DOWNLOAD_REQUIRED' || error.is404Error)) {
-            console.log('[App] 收到全局 update-error 事件（需要手动下载）:', error)
-            const errorVersion = error.version || '未知版本'
-            // 显示 toast 通知（需要手动关闭）
-            notificationService.info(
-              '发现新版本',
-              `版本 ${errorVersion} 已发布，请前往设置页面手动下载更新`,
-              { persistent: true }
-            )
+    // 设置安全键监听
+    async setupSafetyKeyListener() {
+      try {
+        if (window.electronAPI && window.electronAPI.setSafetyKey) {
+          const result = await window.electronAPI.setSafetyKey(this.safetyKeyEnabled, this.safetyKeyUrl)
+          if (result.success) {
+            console.log('✅ 安全键全局快捷键已', this.safetyKeyEnabled ? '启用' : '禁用', '(ESC)')
+          } else {
+            console.warn('设置安全键失败:', result.error)
           }
-        })
-        
-        console.log('[App] 全局更新事件监听器注册完成')
-      } else {
-        console.error('[App] window.electronAPI 不可用，无法注册全局更新事件监听器')
+        }
+      } catch (error) {
+        console.error('设置安全键监听失败:', error)
       }
-    },
-    
+    }
   },
   async mounted() {
     // 读取版本号
@@ -1096,7 +1037,7 @@ export default {
           // 如果路由不存在，跳转到主页
           this.$router.push({ name: 'home' })
         })
-      console.log('🎯 已设置当前页面为:', lastView)
+        console.log('🎯 已设置当前页面为:', lastView)
       } else {
         this.$router.push({ name: 'home' })
       }
@@ -1118,24 +1059,11 @@ export default {
           // 保存当前页面
           this.saveCurrentView(route.name as string)
           
-          // 自动展开相关菜单
-          this.autoExpandMenu(route.name as string)
-          
           // 如果是有筛选器的页面，需要手动触发筛选器数据更新
           if (requiresFilter) {
             this.$nextTick(() => {
-              const routerView = this.$refs.routerView as any
-              if (routerView && routerView.$vnode && routerView.$vnode.componentInstance) {
-                const currentViewRef = routerView.$vnode.componentInstance
-                if (currentViewRef.$refs && currentViewRef.$refs.innerView) {
-                  const innerView = currentViewRef.$refs.innerView
-                  if (innerView && innerView.updateFilterData) {
-                    innerView.updateFilterData()
-                  }
-                } else if (currentViewRef && currentViewRef.updateFilterData) {
-                  currentViewRef.updateFilterData()
-                }
-              }
+              // 通过全局事件请求更新筛选器数据
+              window.dispatchEvent(new CustomEvent('filter-request-update'))
             })
           }
         }
@@ -1148,18 +1076,8 @@ export default {
     this.isFilterSidebarLoading = this.showFilterSidebar
     if (this.showFilterSidebar) {
       this.$nextTick(() => {
-        const routerView = this.$refs.routerView as any
-        if (routerView && routerView.$vnode && routerView.$vnode.componentInstance) {
-          const currentViewRef = routerView.$vnode.componentInstance
-          if (currentViewRef.$refs && currentViewRef.$refs.innerView) {
-            const innerView = currentViewRef.$refs.innerView
-            if (innerView && innerView.updateFilterData) {
-              innerView.updateFilterData()
-            }
-          } else if (currentViewRef && currentViewRef.updateFilterData) {
-          currentViewRef.updateFilterData()
-          }
-        }
+        // 通过全局事件请求更新筛选器数据
+        window.dispatchEvent(new CustomEvent('filter-request-update'))
       })
     }
     
@@ -1170,22 +1088,30 @@ export default {
       console.error('通知服务初始化失败:', error)
     }
 
-    // 加载主题设置
-    await this.theme.loadTheme()
+    // 然后从 SaveManager 加载设置（所有降级逻辑由 SaveManager 处理）
+    try {
+      const settings = await saveManager.loadSettings()
+      const theme = settings?.theme || 'auto'
+      console.log('从 SaveManager 加载主题设置:', theme)
+      this.applyTheme(theme)
       
       // 加载个性化设置
-    await this.personalization.loadPersonalization()
+      if (settings?.customAppTitle) {
+        this.customAppTitle = settings.customAppTitle
+      }
+      if (settings?.customAppSubtitle) {
+        this.customAppSubtitle = settings.customAppSubtitle
+      }
       
       // 加载背景图片设置
-    await this.backgroundImage.loadBackgroundImage()
-    
-    // 初始化个性化设置事件监听
-    const cleanupPersonalization = this.personalization.initPersonalizationListener()
-    this.setCleanupPersonalization(cleanupPersonalization)
-    
-    // 初始化背景图片事件监听
-    const cleanupBackgroundImage = this.backgroundImage.initBackgroundImageListener()
-    this.setCleanupBackgroundImage(cleanupBackgroundImage)
+      if (settings?.backgroundImagePath) {
+        await this.applyBackgroundImage(settings.backgroundImagePath)
+      }
+    } catch (error) {
+      console.warn('从 SaveManager 加载设置失败，使用默认主题:', error)
+      // 如果 SaveManager 也失败了，使用默认主题
+      this.applyTheme('auto')
+    }
 
     await this.checkFirstLoginAchievement()
 
@@ -1203,28 +1129,50 @@ export default {
     // 启动游戏时长更新
     this.startPeriodicPlaytimeUpdate()
     
-    // 监听 GameView 返回的初始 playTime
-    window.addEventListener('game-initial-playtime-response', ((event: CustomEvent) => {
-      const { gameId, initialPlayTime } = event.detail
-      this.gameRunningStore.updateInitialPlayTime(gameId, initialPlayTime)
-      console.log(`[App.vue] 收到游戏 ${gameId} 初始时长: ${initialPlayTime} 秒`)
-    }) as EventListener)
-    
     // 开始应用使用时长跟踪
     await this.startAppUsageTracking()
     
     // 加载安全键设置
-    await this.safetyKey.loadSafetyKeySettings()
-    
-    // 初始化安全键监听
-    const cleanup = this.safetyKey.initSafetyKeyListener()
-    this.setCleanupSafetyKeyListener(cleanup)
+    await this.loadSafetyKeySettings()
     
     // 加载自动备份设置
     await this.loadAutoBackupSettings()
     
     // 检测 WinRAR 安装状态
     await this.checkWinRARInstallation()
+    
+    // 监听自定义标题变化事件
+    window.addEventListener('custom-app-title-changed', (event: CustomEvent) => {
+      const { title } = event.detail
+      this.customAppTitle = title || ''
+    })
+    
+    // 监听自定义副标题变化事件
+    window.addEventListener('custom-app-subtitle-changed', (event: CustomEvent) => {
+      const { subtitle } = event.detail
+      this.customAppSubtitle = subtitle || ''
+    })
+    
+    // 监听背景图片变化事件
+    window.addEventListener('background-image-changed', async (event: CustomEvent) => {
+      const { path } = event.detail
+      this.backgroundImagePath = path || ''
+      if (path) {
+        await this.applyBackgroundImage(path)
+      } else {
+        this.backgroundImageUrl = ''
+      }
+    })
+    
+    // 监听安全键设置变化事件
+    window.addEventListener('safety-key-changed', async (event: CustomEvent) => {
+      const { enabled, url } = event.detail
+      this.safetyKeyEnabled = enabled
+      if (url) {
+        this.safetyKeyUrl = url
+      }
+      await this.setupSafetyKeyListener()
+    })
     
     // 监听自动备份时间间隔变化事件
     window.addEventListener('auto-backup-interval-changed', async (event: CustomEvent) => {
@@ -1239,8 +1187,13 @@ export default {
       this.reloadCustomPages()
     })
     
-    // 设置全局更新事件监听（用于显示 toast 通知）
-    this.setupGlobalUpdateListeners()
+    // 监听安全键触发事件（来自主进程）
+    if (window.electronAPI && window.electronAPI.onSafetyKeyTriggered) {
+      window.electronAPI.onSafetyKeyTriggered(() => {
+        console.log('收到安全键触发事件（来自主进程）')
+        // 主进程已经处理了最小化和打开网页，这里可以添加额外的UI反馈
+      })
+    }
     
     // 所有初始化完成，隐藏加载提示
     this.isLoading = false
@@ -1259,33 +1212,12 @@ export default {
     // 停止自动备份定时器
     this.stopAutoBackupTimer()
     
-    // 清理安全键监听
-    const cleanupSafetyKey = this.getCleanupSafetyKeyListener()
-    if (cleanupSafetyKey) {
-      cleanupSafetyKey()
-    }
-    
-    // 清理个性化设置监听
-    const cleanupPersonalization = this.getCleanupPersonalization()
-    if (cleanupPersonalization) {
-      cleanupPersonalization()
-    }
-    
-    // 清理背景图片监听
-    const cleanupBackgroundImage = this.getCleanupBackgroundImage()
-    if (cleanupBackgroundImage) {
-      cleanupBackgroundImage()
-    }
-    
     // 禁用安全键（清理全局快捷键）
-    this.safetyKey.disableSafetyKey().catch((error) => {
+    if (window.electronAPI && window.electronAPI.setSafetyKey) {
+      // 使用 Promise 而不是 await，因为 beforeUnmount 不能是 async
+      window.electronAPI.setSafetyKey(false, '').catch((error) => {
         console.error('禁用安全键失败:', error)
       })
-    
-    // 清理全局更新事件监听器
-    if (window.electronAPI) {
-      window.electronAPI.removeAllListeners('update-available')
-      window.electronAPI.removeAllListeners('update-error')
     }
   }
 }
