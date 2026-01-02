@@ -188,7 +188,9 @@ import DetailPanel from '../../components/DetailPanel.vue'
 import saveManager from '../../utils/SaveManager.ts'
 import notify from '../../utils/NotificationService.ts'
 import { useWebsiteManagement } from '../../composables/website/useWebsiteManagement'
-import { PropType } from 'vue'
+import { useWebsiteFilter } from '../../composables/website/useWebsiteFilter'
+import { usePagination } from '../../composables/usePagination'
+import { PropType, ref, toRefs } from 'vue'
 import { PageConfig } from '../../types/page'
 
 export default {
@@ -206,7 +208,26 @@ export default {
     }
   },
   setup(props) {
+    // 响应式数据
+    const searchQuery = ref('')
+    const sortBy = ref<'name' | 'category' | 'visitCount' | 'addedDate' | 'lastVisited'>('name')
+
+    // 使用网站管理 composable
     const websiteManagement = useWebsiteManagement(props.pageConfig.id)
+
+    // 使用筛选 composable
+    const filterComposable = useWebsiteFilter(
+      websiteManagement.websites,
+      searchQuery,
+      sortBy
+    )
+
+    // 使用分页 composable
+    const paginationComposable = usePagination(
+      filterComposable.filteredWebsites,
+      20,
+      '网站'
+    )
 
     // 创建统一的资源更新函数（用于 DetailPanel）
     const updateWebsiteResource = async (id: string, updates: { rating?: number; comment?: string; isFavorite?: boolean }) => {
@@ -214,8 +235,13 @@ export default {
     }
     
     return {
+      // 数据
       websites: websiteManagement.websites,
       isLoading: websiteManagement.isLoading,
+      searchQuery,
+      sortBy,
+      
+      // 管理相关
       loadWebsitesFromComposable: websiteManagement.loadWebsites,
       saveWebsites: websiteManagement.saveWebsites,
       addWebsiteToManager: websiteManagement.addWebsite,
@@ -226,6 +252,15 @@ export default {
       getBestFaviconUrl: websiteManagement.getBestFaviconUrl,
       checkWebsiteStatus: websiteManagement.checkWebsiteStatus,
       websiteManager: websiteManagement.websiteManager,
+      
+      // 筛选相关
+      ...toRefs(filterComposable),
+      ...filterComposable,
+      
+      // 分页相关
+      ...toRefs(paginationComposable),
+      ...paginationComposable,
+      
       // 统一的资源更新函数
       updateWebsiteResource
     }
@@ -233,17 +268,9 @@ export default {
   emits: ['filter-data-updated'],
   data() {
     return {
-      // websites: [], // 移除，当前从 setup 获取
-      searchQuery: '',
-      sortBy: 'name',
-      filterCategory: '',
       showAddDialog: false,
       showEditDialog: false,
       selectedWebsite: null,
-      // 分页相关
-      currentWebsitePage: 1,
-      websitePageSize: 20, // 默认每页显示20个网站
-      totalWebsitePages: 0,
       newWebsite: {
         name: '',
         url: '',
@@ -265,16 +292,7 @@ export default {
       editTagInput: '',
       urlError: '',
       editUrlError: '',
-      // isLoading: false, // 移除，当前从 setup 获取
       isElectronEnvironment: false,
-      // 标签筛选相关
-      allTags: [],
-      selectedTags: [],
-      excludedTags: [],
-      // 分类筛选相关
-      allCategories: [],
-      selectedCategories: [],
-      excludedCategories: [],
       // 空状态配置
       websiteEmptyStateConfig: {
         emptyIcon: '🌐',
@@ -313,77 +331,18 @@ export default {
     }
   },
   computed: {
-    filteredWebsites() {
-      let filtered = this.websites
-      
-      // 搜索过滤
-      if (this.searchQuery && this.searchQuery.trim()) {
-        const query = this.searchQuery.toLowerCase()
-        filtered = filtered.filter(website => 
-          website.name.toLowerCase().includes(query) ||
-          website.url.toLowerCase().includes(query) ||
-          website.description.toLowerCase().includes(query) ||
-          website.category.toLowerCase().includes(query) ||
-          website.tags.some(tag => tag.toLowerCase().includes(query))
-        )
-      }
-      
-      // 按分类过滤
-      if (this.filterCategory) {
-        filtered = filtered.filter(website => website.category === this.filterCategory)
-      }
-      
-      // 标签筛选 - 必须包含所有选中的标签（AND逻辑）
-      if (this.selectedTags.length > 0) {
-        filtered = filtered.filter(website => website.tags && this.selectedTags.every(tag => website.tags.includes(tag)))
-      }
-      if (this.excludedTags.length > 0) {
-        filtered = filtered.filter(website => !(website.tags && this.excludedTags.some(tag => website.tags.includes(tag))))
-      }
-      
-      // 分类筛选 - 分类是"或"逻辑（一个网站只能有一个分类）
-      if (this.selectedCategories.length > 0) {
-        filtered = filtered.filter(website => this.selectedCategories.includes(website.category))
-      }
-      if (this.excludedCategories.length > 0) {
-        filtered = filtered.filter(website => !this.excludedCategories.includes(website.category))
-      }
-      
-      // 排序
-      switch (this.sortBy) {
-        case 'name':
-          return [...filtered].sort((a, b) => a.name.localeCompare(b.name))
-        case 'category':
-          return [...filtered].sort((a, b) => a.category.localeCompare(b.category))
-        case 'visitCount':
-          return [...filtered].sort((a, b) => (b.visitCount || 0) - (a.visitCount || 0))
-        case 'addedDate':
-          return [...filtered].sort((a, b) => new Date(b.addedDate).getTime() - new Date(a.addedDate).getTime())
-        case 'lastVisited':
-          return [...filtered].sort((a, b) => {
-            if (!a.lastVisited && !b.lastVisited) return 0
-            if (!a.lastVisited) return 1
-            if (!b.lastVisited) return -1
-            return new Date(b.lastVisited).getTime() - new Date(a.lastVisited).getTime()
-          })
-        default:
-          return filtered
-      }
-    },
-    // 分页显示的网站列表
+    // filteredWebsites 现在通过 filterComposable.filteredWebsites 访问
+    // paginatedWebsites 现在通过 paginationComposable.paginatedItems 访问
+    // websitePaginationConfig 现在通过 paginationComposable.paginationConfig 访问
     paginatedWebsites() {
-      if (!this.filteredWebsites || this.filteredWebsites.length === 0) return []
-      const start = (this.currentWebsitePage - 1) * this.websitePageSize
-      const end = start + this.websitePageSize
-      return this.filteredWebsites.slice(start, end)
+      return this.paginatedItems || []
     },
-    // 动态更新分页配置
     websitePaginationConfig() {
-      return {
-        currentPage: this.currentWebsitePage,
-        totalPages: this.totalWebsitePages,
-        pageSize: this.websitePageSize,
-        totalItems: this.filteredWebsites.length,
+      return this.paginationConfig || {
+        currentPage: 1,
+        totalPages: 0,
+        pageSize: 20,
+        totalItems: 0,
         itemType: '网站'
       }
     },
@@ -424,7 +383,6 @@ export default {
     websiteActions() {
       const actions = [
         { key: 'visit', icon: '🔗', label: '访问网站', class: 'btn-visit' },
-        { key: 'refreshFavicon', icon: '🔄', label: '刷新图标', class: 'btn-refresh-favicon' },
         { key: 'edit', icon: '✏️', label: '编辑信息', class: 'btn-edit' },
         { key: 'remove', icon: '🗑️', label: '删除网站', class: 'btn-remove' }
       ]
@@ -433,20 +391,17 @@ export default {
     }
   },
   watch: {
-    // 监听筛选结果变化，更新分页信息
-    filteredWebsites: {
-      handler() {
-        this.updateWebsitePagination()
-      },
-      immediate: false
-    },
     // 监听搜索查询变化，重置到第一页
     searchQuery() {
-      this.currentWebsitePage = 1
+      if (this.resetToFirstPage) {
+        this.resetToFirstPage()
+      }
     },
     // 监听排序变化，重置到第一页
     sortBy() {
-      this.currentWebsitePage = 1
+      if (this.resetToFirstPage) {
+        this.resetToFirstPage()
+      }
     },
     'newWebsite.url'(newUrl) {
       if (newUrl && !this.websiteManager.validateUrl(newUrl)) {
@@ -472,6 +427,7 @@ export default {
         await this.loadWebsitesFromComposable() // New
         console.log('✅ 网站数据加载完成:', this.websites.length, '个网站')
         this.extractAllTagsAndCategories()
+        this.updateFilterData()
       } catch (error) {
         console.error('❌ 加载网站数据失败:', error)
         alert('加载网站数据失败: ' + error.message)
@@ -480,112 +436,9 @@ export default {
       }
     },
     
-    // 提取所有标签和分类
-    extractAllTagsAndCategories() {
-      const tagCount = {}
-      const categoryCount = {}
-      
-      this.websites.forEach(website => {
-        // 提取标签
-        if (website.tags && Array.isArray(website.tags)) {
-          website.tags.forEach(tag => {
-            tagCount[tag] = (tagCount[tag] || 0) + 1
-          })
-        }
-        
-        // 提取分类
-        if (website.category) {
-          categoryCount[website.category] = (categoryCount[website.category] || 0) + 1
-        }
-      })
-      
-      // 转换为数组并按名称排序
-      this.allTags = Object.entries(tagCount)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => a.name.localeCompare(b.name))
-        
-      this.allCategories = Object.entries(categoryCount)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => a.name.localeCompare(b.name))
-      
-      // 提取完标签后更新筛选器数据
-      this.updateFilterData()
-    },
+    // extractAllTagsAndCategories 现在通过 filterComposable.extractAllTagsAndCategories 访问
     
-    // 筛选方法
-    filterByTag(tagName) {
-      if (this.selectedTags.indexOf(tagName) !== -1) {
-        // 如果当前是选中状态，则取消选择
-        this.selectedTags = this.selectedTags.filter(tag => tag !== tagName)
-      } else if (this.excludedTags.indexOf(tagName) !== -1) {
-        // 如果当前是排除状态，则切换为选中状态
-        this.excludedTags = this.excludedTags.filter(tag => tag !== tagName)
-        this.selectedTags = [...this.selectedTags, tagName]
-      } else {
-        // 否则直接设置为选中状态
-        this.selectedTags = [...this.selectedTags, tagName]
-      }
-      this.updateFilterData()
-    },
-    
-    clearTagFilter() {
-      this.selectedTags = []
-      this.excludedTags = []
-      this.updateFilterData()
-    },
-    
-    filterByCategory(categoryName) {
-      if (this.selectedCategories.indexOf(categoryName) !== -1) {
-        // 如果当前是选中状态，则取消选择
-        this.selectedCategories = this.selectedCategories.filter(category => category !== categoryName)
-      } else if (this.excludedCategories.indexOf(categoryName) !== -1) {
-        // 如果当前是排除状态，则切换为选中状态
-        this.excludedCategories = this.excludedCategories.filter(category => category !== categoryName)
-        this.selectedCategories = [...this.selectedCategories, categoryName]
-      } else {
-        // 否则直接设置为选中状态
-        this.selectedCategories = [...this.selectedCategories, categoryName]
-      }
-      this.updateFilterData()
-    },
-    
-    clearCategoryFilter() {
-      this.selectedCategories = []
-      this.excludedCategories = []
-      this.updateFilterData()
-    },
-    
-    // 排除方法
-    excludeByTag(tagName) {
-      if (this.excludedTags.indexOf(tagName) !== -1) {
-        // 如果已经是排除状态，则取消排除
-        this.excludedTags = this.excludedTags.filter(tag => tag !== tagName)
-      } else if (this.selectedTags.indexOf(tagName) !== -1) {
-        // 如果当前是选中状态，则切换为排除状态
-        this.selectedTags = this.selectedTags.filter(tag => tag !== tagName)
-        this.excludedTags = [...this.excludedTags, tagName]
-      } else {
-        // 否则直接设置为排除状态
-        this.excludedTags = [...this.excludedTags, tagName]
-      }
-      this.updateFilterData()
-    },
-    
-    excludeByCategory(categoryName) {
-      if (this.excludedCategories.indexOf(categoryName) !== -1) {
-        // 如果已经是排除状态，则取消排除
-        this.excludedCategories = this.excludedCategories.filter(category => category !== categoryName)
-      } else if (this.selectedCategories.indexOf(categoryName) !== -1) {
-        // 如果当前是选中状态，则切换为排除状态
-        this.selectedCategories = this.selectedCategories.filter(category => category !== categoryName)
-        this.excludedCategories = [...this.excludedCategories, categoryName]
-      } else {
-        // 否则直接设置为排除状态
-        this.excludedCategories = [...this.excludedCategories, categoryName]
-      }
-      this.updateFilterData()
-    },
-    
+    // 筛选方法现在通过 filterComposable 访问
     // 处理来自 App.vue 的筛选器事件
     handleFilterEvent(event, data) {
       switch (event) {
@@ -611,28 +464,13 @@ export default {
           }
           break
       }
+      this.updateFilterData()
     },
     
     // 更新筛选器数据到 App.vue
     updateFilterData() {
-      this.$emit('filter-data-updated', {
-        filters: [
-          {
-            key: 'tags',
-            title: '标签筛选',
-            items: this.allTags,
-            selected: this.selectedTags,
-            excluded: this.excludedTags
-          },
-          {
-            key: 'categories',
-            title: '分类筛选',
-            items: this.allCategories,
-            selected: this.selectedCategories,
-            excluded: this.excludedCategories
-          }
-        ]
-      })
+      const filterData = this.getFilterData()
+      this.$emit('filter-data-updated', filterData)
     },
     
     async addWebsite() {
@@ -750,9 +588,6 @@ export default {
         case 'visit':
           this.visitWebsite(website)
           break
-        case 'refreshFavicon':
-          this.refreshWebsiteFavicon(website)
-          break
         case 'edit':
           this.editWebsite(website)
           break
@@ -842,19 +677,8 @@ export default {
     
     // 处理分页组件的事件
     handleWebsitePageChange(pageNum) {
-      this.currentWebsitePage = pageNum
-    },
-    
-    // 更新网站列表分页信息
-    updateWebsitePagination() {
-      this.totalWebsitePages = Math.ceil(this.filteredWebsites.length / this.websitePageSize)
-      // 确保当前页不超过总页数
-      if (this.currentWebsitePage > this.totalWebsitePages && this.totalWebsitePages > 0) {
-        this.currentWebsitePage = this.totalWebsitePages
-      }
-      // 如果当前页为0且没有数据，重置为1
-      if (this.currentWebsitePage === 0 && this.filteredWebsites.length > 0) {
-        this.currentWebsitePage = 1
+      if (this.handlePageChange) {
+        this.handlePageChange(pageNum)
       }
     },
     
@@ -869,6 +693,9 @@ export default {
           return
         }
       }
+      
+      // 关闭详情面板
+      this.closeWebsiteDetail()
       
       // 填充编辑数据
       this.editWebsiteData = {
@@ -969,7 +796,7 @@ export default {
       }
       try {
         const newFavoriteStatus = !website.isFavorite
-        await websiteManager.updateWebsite(website.id, { isFavorite: newFavoriteStatus })
+        await this.updateWebsiteInManager(website.id, { isFavorite: newFavoriteStatus })
         // 更新当前网站对象，以便详情面板立即显示新状态
         if (this.selectedWebsite && this.selectedWebsite.id === website.id) {
           this.selectedWebsite.isFavorite = newFavoriteStatus
@@ -1114,8 +941,10 @@ export default {
     
     await this.loadWebsites()
     
-    // 初始化分页信息
-    this.updateWebsitePagination()
+    // 加载分页设置（使用 composable 的方法）
+    if (this.loadPaginationSettings) {
+      await this.loadPaginationSettings('websites')
+    }
     
     // 加载排序设置（后台执行）
     Promise.resolve()
@@ -1123,6 +952,9 @@ export default {
       .catch((e) => {
         console.warn('[WebsiteView] 后台加载排序设置失败:', e)
       })
+    
+    // 初始化筛选器数据
+    this.updateFilterData()
   }
 }
 </script>
@@ -1232,7 +1064,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 3000; /* 高于 DetailPanel 的 z-index: 2000 */
 }
 
 .modal-content {
