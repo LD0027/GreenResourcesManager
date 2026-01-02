@@ -11,6 +11,7 @@
     :search-query="searchQuery"
     @empty-state-action="handleEmptyStateAction"
     @add-item="showAddDialog = true"
+    @import-bookmark="handleImportBookmark"
     @sort-changed="handleSortChanged"
     @search-query-changed="handleSearchQueryChanged"
     @sort-by-changed="handleSortByChanged"
@@ -323,6 +324,7 @@ export default {
       // 工具栏配置
       websiteToolbarConfig: {
         addButtonText: '添加网站',
+        importBookmarkButtonText: '从书签导入',
         searchPlaceholder: '搜索网站...',
         sortOptions: [
           { value: 'name', label: '按名称' },
@@ -1001,6 +1003,60 @@ export default {
       } catch (error) {
         console.error('处理拖拽文件失败:', error)
         notify.toast('error', '导入失败', error.message || '无法导入书签文件')
+      }
+    },
+
+    // 处理导入书签按钮点击
+    handleImportBookmark() {
+      try {
+        // 创建文件输入元素
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = '.html,.htm'
+        input.style.display = 'none'
+        
+        // 清理函数
+        const cleanup = () => {
+          if (input.parentNode) {
+            input.parentNode.removeChild(input)
+          }
+        }
+        
+        // 监听文件选择
+        input.onchange = async (event) => {
+          const target = event.target as HTMLInputElement
+          const files = target.files
+          
+          if (files && files.length > 0) {
+            const file = files[0]
+            
+            // 验证文件类型
+            const fileName = file.name.toLowerCase()
+            if (!fileName.endsWith('.html') && !fileName.endsWith('.htm')) {
+              notify.toast('error', '文件类型错误', '请选择HTML格式的书签文件')
+              cleanup()
+              return
+            }
+            
+            // 导入书签
+            await this.importBookmarksFromFile(file)
+          }
+          
+          // 清理
+          cleanup()
+        }
+        
+        // 监听取消操作（通过点击事件）
+        input.oncancel = () => {
+          cleanup()
+        }
+        
+        // 添加到DOM并触发点击
+        document.body.appendChild(input)
+        input.click()
+      } catch (error) {
+        console.error('打开文件选择对话框失败:', error)
+        notify.toast('error', '操作失败', '无法打开文件选择对话框')
       }
     },
 

@@ -8,11 +8,13 @@
                 :sort-by="sortBy"
                 :add-button-text="toolbarConfig.addButtonText" 
                 :add-folder-button-text="toolbarConfig.addFolderButtonText"
+                :import-bookmark-button-text="toolbarConfig.importBookmarkButtonText"
                 :search-placeholder="toolbarConfig.searchPlaceholder"
                 :sort-options="toolbarConfig.sortOptions" 
                 :page-type="toolbarConfig.pageType" 
                 @add-item="handleAddItem"
                 @add-folder="handleAddFolder"
+                @import-bookmark="handleImportBookmark"
                 @update:searchQuery="handleSearchQueryUpdate"
                 @update:sortBy="handleSortByUpdate"
                 @sort-changed="handleSortChanged" />
@@ -180,6 +182,11 @@ export default {
         // 处理添加文件夹按钮点击
         handleAddFolder() {
             this.$emit('add-folder')
+        },
+
+        // 处理导入书签按钮点击
+        handleImportBookmark() {
+            this.$emit('import-bookmark')
         },
 
         // 处理搜索查询更新（避免直接转发 v-model 事件导致递归）

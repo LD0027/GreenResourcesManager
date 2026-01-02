@@ -9,6 +9,10 @@
         <span class="btn-icon">📁</span>
         {{ addFolderButtonText }}
       </button>
+      <button v-if="importBookmarkButtonText" class="btn-import-bookmark" @click="handleImportBookmarkClick">
+        <span class="btn-icon">📑</span>
+        {{ importBookmarkButtonText }}
+      </button>
       <div class="search-box">
         <input 
           type="text" 
@@ -55,6 +59,10 @@ export default {
       type: String,
       default: ''
     },
+    importBookmarkButtonText: {
+      type: String,
+      default: ''
+    },
     searchPlaceholder: {
       type: String,
       default: '搜索游戏...'
@@ -76,6 +84,7 @@ export default {
   emits: [
     'add-item',
     'add-folder',
+    'import-bookmark',
     'update:searchQuery',
     'update:sortBy',
     'sort-changed'
@@ -98,6 +107,10 @@ export default {
     handleAddFolderClick() {
       console.log('📁 添加文件夹按钮被点击')
       this.$emit('add-folder')
+    },
+    handleImportBookmarkClick() {
+      console.log('📑 导入书签按钮被点击')
+      this.$emit('import-bookmark')
     }
   }
 }
@@ -153,6 +166,25 @@ export default {
 }
 
 .btn-add-folder:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-color);
+}
+
+.btn-import-bookmark {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-import-bookmark:hover {
   background: var(--bg-tertiary);
   border-color: var(--accent-color);
 }
