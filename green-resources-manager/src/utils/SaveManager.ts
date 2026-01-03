@@ -98,6 +98,15 @@ class SaveManager {
           novels: 'name',
           websites: 'name',
           audio: 'name'
+        },
+        // 各页面的布局缩放设置
+        layoutSettings: {
+          games: 100,
+          images: 100,
+          videos: 100,
+          novels: 100,
+          websites: 100,
+          audio: 100
         }
       }
     }
@@ -2064,6 +2073,52 @@ class SaveManager {
     } catch (error) {
       console.error(`获取${pageType}页面排序方式失败:`, error)
       return 'name'
+    }
+  }
+
+  /**
+   * 保存页面布局缩放设置
+   * @param {string} pageType - 页面类型 ('games', 'images', 'videos', 'novels', 'websites', 'audio')
+   * @param {number} scale - 缩放比例 (50-200)
+   * @returns {Promise<boolean>} 保存是否成功
+   */
+  async saveLayoutSetting(pageType, scale) {
+    try {
+      const settings = await this.loadSettings()
+      if (settings) {
+        if (!settings.layoutSettings) {
+          settings.layoutSettings = {}
+        }
+        settings.layoutSettings[pageType] = scale
+        const success = await this.saveSettings(settings)
+        if (success) {
+          console.log(`✅ 已保存${pageType}页面布局缩放:`, scale)
+        }
+        return success
+      }
+      return false
+    } catch (error) {
+      console.error(`保存${pageType}页面布局缩放失败:`, error)
+      return false
+    }
+  }
+
+  /**
+   * 获取页面布局缩放设置
+   * @param {string} pageType - 页面类型 ('games', 'images', 'videos', 'novels', 'websites', 'audio')
+   * @returns {Promise<number>} 缩放比例
+   */
+  async getLayoutSetting(pageType) {
+    try {
+      const settings = await this.loadSettings()
+      if (settings && settings.layoutSettings && settings.layoutSettings[pageType] !== undefined) {
+        console.log(`✅ 加载${pageType}页面布局缩放:`, settings.layoutSettings[pageType])
+        return settings.layoutSettings[pageType]
+      }
+      return 100 // 默认100%
+    } catch (error) {
+      console.error(`获取${pageType}页面布局缩放失败:`, error)
+      return 100
     }
   }
 

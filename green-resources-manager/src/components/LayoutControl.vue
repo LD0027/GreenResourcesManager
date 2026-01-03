@@ -7,6 +7,7 @@
       max="150" 
       :value="scale" 
       @input="handleInput"
+      @change="handleChange"
       class="scale-slider"
     >
   </div>
@@ -23,15 +24,23 @@ export default defineComponent({
       default: 80
     }
   },
-  emits: ['update:scale'],
+  emits: ['update:scale', 'scale-changed'],
   setup(props, { emit }) {
     const handleInput = (event: Event) => {
       const value = Number((event.target as HTMLInputElement).value)
+      // 拖动过程中只更新 UI，不保存
       emit('update:scale', value)
     }
 
+    const handleChange = (event: Event) => {
+      const value = Number((event.target as HTMLInputElement).value)
+      // 拖动结束时触发保存事件
+      emit('scale-changed', value)
+    }
+
     return {
-      handleInput
+      handleInput,
+      handleChange
     }
   }
 })

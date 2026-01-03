@@ -29,7 +29,8 @@
       <LayoutControl
         v-if="showLayoutControl"
         :scale="scale"
-        @update:scale="$emit('update:scale', $event)"
+        @update:scale="handleScaleUpdate"
+        @scale-changed="handleScaleChanged"
       />
       <select :value="sortBy" @change="handleSortChange" class="sort-select">
         <option 
@@ -46,6 +47,7 @@
 
 <script>
 import LayoutControl from './LayoutControl.vue'
+import saveManager from '../utils/SaveManager.ts'
 
 export default {
   name: 'Toolbar',
@@ -97,6 +99,10 @@ export default {
     showLayoutControl: {
       type: Boolean,
       default: false
+    },
+    pageType: {
+      type: String,
+      default: ''
     }
   },
   emits: [
@@ -106,14 +112,27 @@ export default {
     'update:searchQuery',
     'update:sortBy',
     'sort-changed',
-    'update:scale'
+    'update:scale',
+    'layout-changed'
   ],
-  mounted() {
+  async mounted() {
     console.log('🔍 Toolbar mounted, 初始 sortBy:', this.sortBy)
+    // 加载保存的布局设置
+    if (this.showLayoutControl && this.pageType) {
+      await this.loadLayoutSetting()
+    } else {
+      // 如果没有布局控制，直接解除初始化标记
+      this.isInitializing = false
+    }
   },
   watch: {
     sortBy(newValue, oldValue) {
       console.log('🔍 Toolbar sortBy 变化:', oldValue, '→', newValue)
+    }
+  },
+  data() {
+    return {
+      isInitializing: true // 标记是否正在初始化
     }
   },
   methods: {
@@ -122,6 +141,44 @@ export default {
       console.log('🔍 Toolbar 用户选择排序:', newSortBy)
       this.$emit('update:sortBy', newSortBy)
       this.$emit('sort-changed', { pageType: this.pageType, sortBy: newSortBy })
+    },
+    handleScaleUpdate(newScale) {
+      // 拖动过程中只更新 UI，不保存
+      this.$emit('update:scale', newScale)
+    },
+    async handleScaleChanged(newScale) {
+      // 拖动结束时才保存布局设置
+      if (!this.isInitializing && this.pageType) {
+        try {
+          await saveManager.saveLayoutSetting(this.pageType, newScale)
+          console.log(`✅ 已保存${this.pageType}页面布局缩放:`, newScale)
+          this.$emit('layout-changed', { pageType: this.pageType, scale: newScale })
+        } catch (error) {
+          console.warn('保存布局缩放失败:', error)
+        }
+      }
+    },
+    async loadLayoutSetting() {
+      if (!this.pageType) {
+        this.isInitializing = false
+        return
+      }
+      
+      try {
+        this.isInitializing = true
+        const savedScale = await saveManager.getLayoutSetting(this.pageType)
+        if (savedScale !== undefined && savedScale !== null && savedScale !== this.scale) {
+          console.log(`✅ 已加载${this.pageType}页面布局缩放:`, savedScale)
+          // 通过事件更新父组件的 scale（不触发保存）
+          this.$emit('update:scale', savedScale)
+        }
+      } catch (error) {
+        console.warn('加载布局缩放失败:', error)
+      } finally {
+        // 确保在加载完成后解除初始化标记
+        await this.$nextTick()
+        this.isInitializing = false
+      }
     },
     handleAddFolderClick() {
       console.log('📁 添加文件夹按钮被点击')
@@ -239,6 +296,12 @@ export default {
   right: 10px;
   color: var(--text-tertiary);
   pointer-events: none;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .sort-select {
