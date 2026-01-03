@@ -15,6 +15,7 @@
  *
  * 内部函数:
  * - `takeScreenshot(customDirectory, format, quality, runningGamesInfo, app)`: 执行截图操作。
+ * - `renameScreenshotFolderIfNeeded(baseScreenshotsDir, gameId, expectedFolderName)`: 查找并重命名游戏截图文件夹（如果需要）。
  * - `getScreenshotsDirectory(app)`: 获取默认截图目录。
  * - `setScreenshotsDirectory(getMainWindow, dialog)`: 设置截图目录。
  * - `getAvailableWindows(desktopCapturer)`: 获取可用窗口列表。
@@ -40,6 +41,60 @@ const { desktopCapturer, app, dialog } = require('electron')
 const fs = require('fs')
 const path = require('path')
 const windowsUtils = require('../utils/windows-utils')
+
+/**
+ * 查找并重命名游戏截图文件夹（如果需要）
+ * 查找以 gameId_ 开头的文件夹，如果名称不匹配则重命名为新名称
+ * @param {string} baseScreenshotsDir - 基础截图目录
+ * @param {string} gameId - 游戏ID
+ * @param {string} expectedFolderName - 期望的文件夹名称（格式：ID_游戏名）
+ * @returns {{screenshotsDir: string, foundExistingFolder: boolean}} 返回最终的文件夹路径和是否找到现有文件夹
+ */
+function renameScreenshotFolderIfNeeded(baseScreenshotsDir, gameId, expectedFolderName) {
+  const expectedScreenshotsDir = path.join(baseScreenshotsDir, expectedFolderName)
+  let screenshotsDir = expectedScreenshotsDir
+  let foundExistingFolder = false
+
+  try {
+    if (fs.existsSync(baseScreenshotsDir)) {
+      const files = fs.readdirSync(baseScreenshotsDir)
+      // 清理游戏ID中的非法字符，用于匹配
+      const cleanGameId = gameId.replace(/[<>:"/\\|?*]/g, '_').trim()
+      
+      // 查找所有以 gameId_ 开头的文件夹
+      const matchingFolder = files.find(folder => {
+        const folderPath = path.join(baseScreenshotsDir, folder)
+        const stats = fs.statSync(folderPath)
+        return stats.isDirectory() && folder.startsWith(`${cleanGameId}_`)
+      })
+
+      if (matchingFolder) {
+        const existingFolderPath = path.join(baseScreenshotsDir, matchingFolder)
+        console.log(`找到以ID开头的截图文件夹: ${matchingFolder}`)
+        
+        // 如果找到的文件夹名称与期望的不一致，重命名它
+        if (matchingFolder !== expectedFolderName) {
+          try {
+            fs.renameSync(existingFolderPath, expectedScreenshotsDir)
+            console.log(`✅ 已重命名截图文件夹: "${matchingFolder}" -> "${expectedFolderName}"`)
+            screenshotsDir = expectedScreenshotsDir
+          } catch (renameError) {
+            console.warn(`⚠️ 重命名截图文件夹失败:`, renameError.message)
+            // 重命名失败，使用现有文件夹
+            screenshotsDir = existingFolderPath
+          }
+        } else {
+          screenshotsDir = existingFolderPath
+        }
+        foundExistingFolder = true
+      }
+    }
+  } catch (error) {
+    console.warn('查找截图文件夹失败:', error.message)
+  }
+
+  return { screenshotsDir, foundExistingFolder }
+}
 
 /**
  * 过滤系统窗口和通知窗口，返回非系统窗口列表。
@@ -387,46 +442,13 @@ async function takeScreenshot(customDirectory, format = 'png', quality = 90, run
     const cleanGameId = gameId.replace(/[<>:"/\\|?*]/g, '_').trim()
     const cleanGameName = (matchedGameName || windowName || 'Screenshots').replace(/[<>:"/\\|?*]/g, '_').trim()
     const expectedFolderName = `${cleanGameId}_${cleanGameName}`
-    const expectedScreenshotsDir = path.join(baseScreenshotsDir, expectedFolderName)
 
-    // 查找以 gameId_ 开头的文件夹
-    let screenshotsDir = expectedScreenshotsDir
-    let foundExistingFolder = false
-
-    try {
-      if (fs.existsSync(baseScreenshotsDir)) {
-        const files = fs.readdirSync(baseScreenshotsDir)
-        // 查找所有以 gameId_ 开头的文件夹
-        const matchingFolder = files.find(folder => {
-          const folderPath = path.join(baseScreenshotsDir, folder)
-          const stats = fs.statSync(folderPath)
-          return stats.isDirectory() && folder.startsWith(`${cleanGameId}_`)
-        })
-
-        if (matchingFolder) {
-          const existingFolderPath = path.join(baseScreenshotsDir, matchingFolder)
-          console.log(`找到以ID开头的截图文件夹: ${matchingFolder}`)
-          
-          // 如果找到的文件夹名称与期望的不一致，重命名它
-          if (matchingFolder !== expectedFolderName) {
-            try {
-              fs.renameSync(existingFolderPath, expectedScreenshotsDir)
-              console.log(`✅ 已重命名截图文件夹: "${matchingFolder}" -> "${expectedFolderName}"`)
-              screenshotsDir = expectedScreenshotsDir
-            } catch (renameError) {
-              console.warn(`⚠️ 重命名截图文件夹失败:`, renameError.message)
-              // 重命名失败，使用现有文件夹
-              screenshotsDir = existingFolderPath
-            }
-          } else {
-            screenshotsDir = existingFolderPath
-          }
-          foundExistingFolder = true
-        }
-      }
-    } catch (error) {
-      console.warn('查找截图文件夹失败:', error.message)
-    }
+    // 查找并重命名截图文件夹（如果需要）
+    const { screenshotsDir, foundExistingFolder } = renameScreenshotFolderIfNeeded(
+      baseScreenshotsDir,
+      gameId,
+      expectedFolderName
+    )
 
     // 如果没找到现有文件夹，创建新文件夹
     if (!foundExistingFolder) {

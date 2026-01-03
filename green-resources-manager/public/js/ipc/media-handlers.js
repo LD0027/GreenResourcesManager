@@ -84,6 +84,50 @@ function registerIpcHandlers(ipcMain, shell, pathUtils) {
     }
   })
 
+  // 重命名文件夹
+  ipcMain.handle('rename-folder', async (event, oldPath, newPath) => {
+    try {
+      if (!oldPath || !newPath || oldPath.trim() === '' || newPath.trim() === '') {
+        return { success: false, error: '无效的文件夹路径' }
+      }
+
+      // 规范化路径
+      const normalizedOldPath = path.normalize(oldPath)
+      const normalizedNewPath = path.normalize(newPath)
+
+      // 检查旧文件夹是否存在
+      if (!fs.existsSync(normalizedOldPath)) {
+        return { success: false, error: `源文件夹不存在: ${normalizedOldPath}` }
+      }
+
+      // 检查是否为文件夹
+      const stats = fs.statSync(normalizedOldPath)
+      if (!stats.isDirectory()) {
+        return { success: false, error: '源路径不是文件夹' }
+      }
+
+      // 检查新路径是否已存在
+      if (fs.existsSync(normalizedNewPath)) {
+        return { success: false, error: `目标文件夹已存在: ${normalizedNewPath}` }
+      }
+
+      // 确保目标目录的父目录存在
+      const parentDir = path.dirname(normalizedNewPath)
+      if (!fs.existsSync(parentDir)) {
+        fs.mkdirSync(parentDir, { recursive: true })
+      }
+
+      // 重命名文件夹
+      fs.renameSync(normalizedOldPath, normalizedNewPath)
+      console.log(`✅ 文件夹重命名成功: "${normalizedOldPath}" -> "${normalizedNewPath}"`)
+
+      return { success: true }
+    } catch (error) {
+      console.error('重命名文件夹失败:', error)
+      return { success: false, error: error.message }
+    }
+  })
+
   // 专门用于读取伪装图片的 API
   ipcMain.handle('read-disguise-images', async () => {
     try {

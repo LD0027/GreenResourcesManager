@@ -67,6 +67,7 @@ declare global {
       getFolderSize: (filePath: string) => Promise<{ success: boolean; size?: number; error?: string }>
       openFileFolder: (filePath: string) => Promise<{ success: boolean; folderPath?: string; error?: string }>
       openFolder: (filePath: string) => Promise<{ success: boolean; error?: string }>
+      renameFolder: (oldPath: string, newPath: string) => Promise<{ success: boolean; error?: string }>
       openExternal: (urlOrPath: string) => Promise<{ success: boolean; error?: string }>
       getFileIcon: (filePath: string, size?: number) => Promise<{ success: boolean; icon?: string; error?: string }>
       

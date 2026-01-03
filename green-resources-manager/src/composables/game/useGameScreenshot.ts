@@ -48,12 +48,34 @@ export async function getGameScreenshotFolderPath(
         })
         
         if (matchingFolder) {
-          gameScreenshotPath = `${baseScreenshotsPath}/${matchingFolder}`
+          const existingFolderPath = `${baseScreenshotsPath}/${matchingFolder}`
           console.log(`找到以ID开头的截图文件夹: ${matchingFolder}`)
           
-          // 如果找到的文件夹名称与期望的不一致，记录日志
+          // 如果找到的文件夹名称与期望的不一致，直接重命名它
           if (matchingFolder !== expectedFolderName) {
-            console.log(`ℹ️ 检测到文件夹名称不匹配: "${matchingFolder}" != "${expectedFolderName}"，将在下次保存截图时自动重命名`)
+            if (window.electronAPI && window.electronAPI.renameFolder) {
+              try {
+                const renameResult = await window.electronAPI.renameFolder(existingFolderPath, gameScreenshotPath)
+                if (renameResult.success) {
+                  console.log(`✅ 已重命名截图文件夹: "${matchingFolder}" -> "${expectedFolderName}"`)
+                  gameScreenshotPath = `${baseScreenshotsPath}/${expectedFolderName}`
+                } else {
+                  console.warn(`⚠️ 重命名截图文件夹失败:`, renameResult.error)
+                  // 重命名失败，使用现有文件夹
+                  gameScreenshotPath = existingFolderPath
+                }
+              } catch (error) {
+                console.warn('重命名截图文件夹异常:', error)
+                // 重命名失败，使用现有文件夹
+                gameScreenshotPath = existingFolderPath
+              }
+            } else {
+              // 如果没有重命名 API，使用现有文件夹
+              gameScreenshotPath = existingFolderPath
+              console.log(`ℹ️ 检测到文件夹名称不匹配: "${matchingFolder}" != "${expectedFolderName}"，但无法重命名（API不可用）`)
+            }
+          } else {
+            gameScreenshotPath = existingFolderPath
           }
         } else {
           console.log(`未找到现有文件夹，将使用: ${expectedFolderName}`)

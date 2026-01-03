@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   deleteFile: (filePath) => ipcRenderer.invoke('delete-file', filePath),
   deleteDirectory: (dirPath) => ipcRenderer.invoke('delete-directory', dirPath),
   ensureDirectory: (dirPath) => ipcRenderer.invoke('ensure-directory', dirPath),
+  renameFolder: (oldPath, newPath) => ipcRenderer.invoke('rename-folder', oldPath, newPath),
   
   // 文件操作
   writeFile: (filePath, buffer) => ipcRenderer.invoke('write-file', filePath, buffer),
