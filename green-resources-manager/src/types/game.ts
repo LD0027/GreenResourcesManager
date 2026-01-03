@@ -58,7 +58,11 @@ export interface FilterItem {
 /**
  * 游戏排序方式
  */
-export type GameSortBy = 'name' | 'lastPlayed' | 'playTime' | 'added'
+export type GameSortBy = 
+  | 'name-asc' | 'name-desc' 
+  | 'lastPlayed-asc' | 'lastPlayed-desc' 
+  | 'playTime-asc' | 'playTime-desc' 
+  | 'added-asc' | 'added-desc'
 
 /**
  * 游戏筛选选项接口

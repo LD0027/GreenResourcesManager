@@ -148,22 +148,30 @@ export function useGameFilter(games: Ref<Game[]>, searchQuery: Ref<string>, sort
 
     // 排序
     filtered.sort((a, b) => {
-      switch (sortBy.value) {
-        case 'name':
-          return a.name.localeCompare(b.name)
-        case 'lastPlayed':
-          const aTime = a.lastPlayed ? new Date(a.lastPlayed).getTime() : 0
-          const bTime = b.lastPlayed ? new Date(b.lastPlayed).getTime() : 0
-          return bTime - aTime
-        case 'playTime':
-          return (b.playTime || 0) - (a.playTime || 0)
-        case 'added':
-          const aAdded = a.addedDate ? new Date(a.addedDate).getTime() : 0
-          const bAdded = b.addedDate ? new Date(b.addedDate).getTime() : 0
-          return bAdded - aAdded
-        default:
-          return 0
+      const sortType = sortBy.value
+      let result = 0
+      
+      // 解析排序类型和方向
+      if (sortType.startsWith('name-')) {
+        result = a.name.localeCompare(b.name)
+      } else if (sortType.startsWith('lastPlayed-')) {
+        const aTime = a.lastPlayed ? new Date(a.lastPlayed).getTime() : 0
+        const bTime = b.lastPlayed ? new Date(b.lastPlayed).getTime() : 0
+        result = aTime - bTime
+      } else if (sortType.startsWith('playTime-')) {
+        result = (a.playTime || 0) - (b.playTime || 0)
+      } else if (sortType.startsWith('added-')) {
+        const aAdded = a.addedDate ? new Date(a.addedDate).getTime() : 0
+        const bAdded = b.addedDate ? new Date(b.addedDate).getTime() : 0
+        result = aAdded - bAdded
       }
+      
+      // 如果是降序，反转结果
+      if (sortType.endsWith('-desc')) {
+        result = -result
+      }
+      
+      return result
     })
 
     return filtered

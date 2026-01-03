@@ -49,7 +49,7 @@ export default {
     },
     sortBy: {
       type: String,
-      default: 'name'
+      default: 'name-asc'
     },
     addButtonText: {
       type: String,
@@ -70,10 +70,14 @@ export default {
     sortOptions: {
       type: Array,
       default: () => [
-        { value: 'name', label: '按名称排序' },
-        { value: 'lastPlayed', label: '按最后游玩时间' },
-        { value: 'playTime', label: '按游戏时长' },
-        { value: 'added', label: '按添加时间' }
+        { value: 'name-asc', label: '按名称排序（升序）' },
+        { value: 'name-desc', label: '按名称排序（降序）' },
+        { value: 'lastPlayed-asc', label: '按最后游玩时间（升序）' },
+        { value: 'lastPlayed-desc', label: '按最后游玩时间（降序）' },
+        { value: 'playTime-asc', label: '按游戏时长（升序）' },
+        { value: 'playTime-desc', label: '按游戏时长（降序）' },
+        { value: 'added-asc', label: '按添加时间（升序）' },
+        { value: 'added-desc', label: '按添加时间（降序）' }
       ]
     },
     pageType: {

@@ -107,6 +107,7 @@ import saveManager from '../../utils/SaveManager.ts'
 import notify from '../../utils/NotificationService.ts'
 import { ref, toRefs, PropType } from 'vue'
 import { PageConfig } from '../../types/page'
+import { GameSortBy } from '../../types/game'
 import { useGameFilter } from '../../composables/game/useGameFilter'
 import { useGameManagement } from '../../composables/game/useGameManagement'
 import { useGameScreenshot } from '../../composables/game/useGameScreenshot'
@@ -141,7 +142,7 @@ export default {
     const games = ref([])
     const isElectronEnvironment = ref(false)
     const searchQuery = ref('')
-    const sortBy = ref<'name' | 'lastPlayed' | 'playTime' | 'added'>('name')
+    const sortBy = ref<GameSortBy>('name-asc')
 
     // 使用筛选 composable
     const filterComposable = useGameFilter(games, searchQuery, sortBy)
@@ -350,10 +351,14 @@ export default {
         addButtonText: '添加游戏',
         searchPlaceholder: '搜索游戏...',
         sortOptions: [
-          { value: 'name', label: '按名称排序' },
-          { value: 'lastPlayed', label: '按最后游玩时间' },
-          { value: 'playTime', label: '按游戏时长' },
-          { value: 'added', label: '按添加时间' }
+          { value: 'name-asc', label: '按名称排序（升序）' },
+          { value: 'name-desc', label: '按名称排序（降序）' },
+          { value: 'lastPlayed-asc', label: '按最后游玩时间（升序）' },
+          { value: 'lastPlayed-desc', label: '按最后游玩时间（降序）' },
+          { value: 'playTime-asc', label: '按游戏时长（升序）' },
+          { value: 'playTime-desc', label: '按游戏时长（降序）' },
+          { value: 'added-asc', label: '按添加时间（升序）' },
+          { value: 'added-desc', label: '按添加时间（降序）' }
         ],
         pageType: 'games'
       }
@@ -1698,9 +1703,18 @@ export default {
       try {
 
         const savedSortBy = await saveManager.getSortSetting('games')
-        if (savedSortBy && savedSortBy !== this.sortBy) {
-          this.sortBy = savedSortBy
-          console.log('✅ 已加载游戏页面排序方式:', savedSortBy)
+        if (savedSortBy) {
+          // 兼容旧的排序值，转换为新格式
+          let normalizedSortBy = savedSortBy
+          if (!savedSortBy.includes('-')) {
+            // 旧的排序值（如 'name'），默认转换为升序
+            normalizedSortBy = `${savedSortBy}-asc`
+          }
+          
+          if (normalizedSortBy !== this.sortBy) {
+            this.sortBy = normalizedSortBy as GameSortBy
+            console.log('✅ 已加载游戏页面排序方式:', normalizedSortBy)
+          }
         }
       } catch (error) {
         console.warn('加载排序方式失败:', error)
