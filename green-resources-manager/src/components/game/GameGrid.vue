@@ -1,10 +1,11 @@
 <template>
-  <div class="games-grid" v-if="games.length > 0">
+  <div class="games-grid" v-if="games.length > 0" :style="layoutStyles">
     <MediaCard 
       v-for="game in games" 
       :key="game.id" 
       :item="game" 
       type="game"
+      :scale="scale"
       :is-running="isGameRunning(game)" 
       :is-electron-environment="isElectronEnvironment"
       :file-exists="game.fileExists" 
@@ -16,7 +17,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, type PropType } from 'vue'
+import { defineComponent, type PropType, computed } from 'vue'
 import MediaCard from '../MediaCard.vue'
 import type { Game } from '../../types/game'
 
@@ -38,9 +39,20 @@ export default defineComponent({
     isElectronEnvironment: {
       type: Boolean,
       default: false
+    },
+    scale: {
+      type: Number,
+      default: 100
+    },
+    layoutStyles: {
+      type: Object,
+      required: true
     }
   },
-  emits: ['game-click', 'game-contextmenu', 'game-action']
+  emits: ['game-click', 'game-contextmenu', 'game-action'],
+  setup(props) {
+    return {}
+  }
 })
 </script>
 
@@ -49,7 +61,7 @@ export default defineComponent({
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 20px;
-  padding: 20px;
+  padding: 10px 20px;
 }
 
 /* 响应式设计 */

@@ -17,6 +17,9 @@
     @sort-by-changed="handleSortByChanged"
     @context-menu-click="handleContextMenuClick"
     @page-change="handleWebsitePageChange"
+    :scale="scale"
+    :show-layout-control="true"
+    @update:scale="updateScale"
   >
     <!-- 主内容区域 -->
     <div 
@@ -35,13 +38,14 @@
       </div>
 
       <!-- 网站列表 -->
-      <div class="websites-grid" v-else-if="paginatedWebsites.length > 0">
+      <div class="websites-grid" v-else-if="paginatedWebsites.length > 0" :style="layoutStyles">
         <MediaCard 
           v-for="website in paginatedWebsites" 
           :key="website.id"
           :item="formatWebsiteForMediaCard(website)"
           type="image"
           :is-electron-environment="isElectronEnvironment"
+          :scale="scale"
           @click="showWebsiteDetail"
           @contextmenu="(event) => ($refs.baseView as any).showContextMenuHandler(event, website)"
           @action="(item) => visitWebsite(item)"
@@ -189,6 +193,7 @@ import { usePagination } from '../../composables/usePagination'
 import { PropType, ref, toRefs } from 'vue'
 import { PageConfig } from '../../types/page'
 import { parseBookmarkFromFile, deduplicateBookmarks, type ParsedBookmark } from '../../utils/BookmarkParser'
+import { useDisplayLayout } from '../../composables/useDisplayLayout'
 
 export default {
   name: 'WebsiteView',
@@ -212,6 +217,9 @@ export default {
     // 使用网站管理 composable
     const websiteManagement = useWebsiteManagement(props.pageConfig.id)
 
+    // 使用显示布局 composable
+    const displayLayoutComposable = useDisplayLayout(80, 300)
+
     // 使用筛选 composable
     const filterComposable = useWebsiteFilter(
       websiteManagement.websites,
@@ -222,8 +230,7 @@ export default {
     // 使用分页 composable
     const paginationComposable = usePagination(
       filterComposable.filteredWebsites,
-      20,
-      '网站'
+      20
     )
 
     // 创建统一的资源更新函数（用于 DetailPanel）
@@ -259,7 +266,8 @@ export default {
       ...paginationComposable,
       
       // 统一的资源更新函数
-      updateWebsiteResource
+      updateWebsiteResource,
+      ...displayLayoutComposable
     }
   },
   emits: ['filter-data-updated'],

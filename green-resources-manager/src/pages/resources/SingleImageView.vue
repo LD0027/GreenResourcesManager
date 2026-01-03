@@ -16,6 +16,9 @@
           @sort-by-changed="handleSortByChanged"
           @context-menu-click="handleContextMenuClick"
           @page-change="handleAlbumPageChange"
+          :scale="scale"
+          :show-layout-control="true"
+          @update:scale="updateScale"
         >
     <!-- 主内容区域 -->
     <div 
@@ -29,7 +32,7 @@
 
 
     <!-- 专辑网格 -->
-    <div class="albums-grid" v-if="paginatedAlbums.length > 0">
+    <div class="albums-grid" v-if="paginatedAlbums.length > 0" :style="layoutStyles">
       <MediaCard
         v-for="album in paginatedAlbums" 
         :key="album.id"
@@ -37,6 +40,7 @@
         type="image"
         :isElectronEnvironment="true"
         :file-exists="album.fileExists !== undefined ? album.fileExists : false"
+        :scale="scale"
         @click="showAlbumDetail"
         @contextmenu="(event) => ($refs.baseView as any).showContextMenuHandler(event, album)"
         @action="openAlbum"
@@ -184,6 +188,7 @@ import { useImageCache } from '../../composables/image/useImageCache.ts'
 import { useImagePages } from '../../composables/image/useImagePages.ts'
 import { useImageCover } from '../../composables/image/useImageCover.ts'
 import { useResourceRating } from '../../composables/useResourceRating.ts'
+import { useDisplayLayout } from '../../composables/useDisplayLayout.ts'
 
 const IMAGE_COLLECTION_ACHIEVEMENTS = [
   { threshold: 50, id: 'image_collector_50' },
@@ -307,7 +312,10 @@ export default {
       coverRef: editAlbumCover,
       folderPathRef: editAlbumFolderPath
     })
+    // 使用显示布局 composable
+    const displayLayoutComposable = useDisplayLayout(80, 200)
 
+    // 
     // 解构 composable，排除 removeAlbum 避免与 methods 冲突
     const { removeAlbum, ...restAlbumComposable } = imageAlbumComposable
     
@@ -342,6 +350,8 @@ export default {
       dragDropHandleDrop: dragDropHandleDrop,
       // 图片缓存相关
       ...imageCacheComposable,
+      // 显示布局相关
+      ...displayLayoutComposable,
       // 详情页图片分页相关
       ...imagePagesComposable,
       // 封面管理相关（新专辑）

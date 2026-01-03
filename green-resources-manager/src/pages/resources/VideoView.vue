@@ -17,6 +17,9 @@
           @sort-by-changed="handleSortByChanged"
           @context-menu-click="handleContextMenuClick"
           @page-change="handleVideoPageChange"
+          :scale="scale"
+          :show-layout-control="true"
+          @update:scale="updateScale"
         >
     <!-- 主内容区域 -->
     <div 
@@ -29,7 +32,7 @@
     >
 
       <!-- 视频和文件夹网格 -->
-      <div class="videos-grid" v-if="paginatedItems.length > 0">
+      <div class="videos-grid" v-if="paginatedItems.length > 0" :style="layoutStyles">
         <MediaCard
           v-for="item in paginatedItems" 
           :key="item.id"
@@ -37,6 +40,7 @@
           :type="item.type || 'video'"
           :isElectronEnvironment="true"
           :file-exists="item.fileExists"
+          :scale="scale"
           @click="item.type === 'folder' ? showFolderDetail(item) : showVideoDetail(item)"
           @contextmenu="(event) => ($refs.baseView as any).showContextMenuHandler(event, item)"
           @action="item.type === 'folder' ? openFolder(item) : playVideo(item)"
@@ -159,6 +163,7 @@ import { useVideoDragDrop } from '../../composables/video/useVideoDragDrop'
 import { useVideoThumbnail } from '../../composables/video/useVideoThumbnail'
 import { useVideoDuration } from '../../composables/video/useVideoDuration'
 import { useVideoPlayback } from '../../composables/video/useVideoPlayback'
+import { useDisplayLayout } from '../../composables/useDisplayLayout'
 // 通过 preload 暴露的 electronAPI 进行调用
 
 export default {
@@ -184,6 +189,9 @@ export default {
   setup(props) {
     // 使用视频管理 composable
     const videoManagementComposable = useVideoManagement(props.pageConfig.id)
+
+    // 使用显示布局 composable
+    const displayLayoutComposable = useDisplayLayout(80, 350)
     
     // 使用文件夹管理 composable（传入页面ID以隔离数据）
     const videoFolderComposable = useVideoFolder(props.pageConfig.id)
@@ -302,7 +310,9 @@ export default {
       ...videoPlaybackComposable,
       // 统一的资源更新函数
       updateVideoResource,
-      selectedVideoRef
+      selectedVideoRef,
+      // 显示布局相关
+      ...displayLayoutComposable
     }
   },
   data() {
@@ -2384,7 +2394,7 @@ export default {
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: var(--spacing-xl);
   margin-bottom: var(--spacing-3xl);
-  padding: var(--spacing-xl);
+  padding: 10px 0;
 }
 
 .video-card {

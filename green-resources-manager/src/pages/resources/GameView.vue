@@ -2,6 +2,7 @@
   <BaseView ref="baseView" :items="games" :filtered-items="filteredGames" :empty-state-config="gameEmptyStateConfig"
     :toolbar-config="gameToolbarConfig" :context-menu-items="gameContextMenuItems"
     :pagination-config="gamePaginationConfig" :sort-by="sortBy" :search-query="searchQuery"
+    :scale="scale" :show-layout-control="true" @update:scale="updateScale"
     @empty-state-action="handleEmptyStateAction" @add-item="showAddGameDialog" @sort-changed="handleSortChanged"
     @search-query-changed="handleSearchQueryChanged" @sort-by-changed="handleSortByChanged"
     @context-menu-click="handleContextMenuClick" @page-change="handleGamePageChange">
@@ -15,6 +16,8 @@
         :games="paginatedGames"
         :is-game-running="isGameRunning"
         :is-electron-environment="isElectronEnvironment"
+        :scale="scale"
+        :layout-styles="layoutStyles"
         @game-click="showGameDetail"
         @game-contextmenu="handleGameContextMenu"
         @game-action="launchGame"
@@ -118,6 +121,7 @@ import { useGamePlayTime } from '../../composables/game/useGamePlayTime'
 import { usePagination } from '../../composables/usePagination'
 import { useGameDragAndDrop, isArchiveFile } from '../../composables/game/useGameDragAndDrop'
 import { useGameRunningStore } from '../../stores/game-running'
+import { useDisplayLayout } from '../../composables/useDisplayLayout'
 
 export default {
   name: 'GameView',
@@ -145,6 +149,9 @@ export default {
     const isElectronEnvironment = ref(false)
     const searchQuery = ref('')
     const sortBy = ref<GameSortBy>('name-asc')
+
+    // 使用显示布局 composable
+    const displayLayoutComposable = useDisplayLayout(80, 400)
 
     // 使用筛选 composable
     const filterComposable = useGameFilter(games, searchQuery, sortBy)
@@ -216,6 +223,8 @@ export default {
       // 管理相关
       ...toRefs(managementComposable),
       ...managementComposable,
+      // 显示布局相关
+      ...displayLayoutComposable,
       // 截图相关
       ...toRefs(screenshotComposable),
       ...screenshotComposable,

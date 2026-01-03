@@ -11,13 +11,16 @@
                 :import-bookmark-button-text="toolbarConfig.importBookmarkButtonText"
                 :search-placeholder="toolbarConfig.searchPlaceholder"
                 :sort-options="toolbarConfig.sortOptions" 
-                :page-type="toolbarConfig.pageType" 
+                :page-type="toolbarConfig.pageType"
+                :scale="scale"
+                :show-layout-control="showLayoutControl"
                 @add-item="handleAddItem"
                 @add-folder="handleAddFolder"
                 @import-bookmark="handleImportBookmark"
                 @update:searchQuery="handleSearchQueryUpdate"
                 @update:sortBy="handleSortByUpdate"
-                @sort-changed="handleSortChanged" />
+                @sort-changed="handleSortChanged"
+                @update:scale="$emit('update:scale', $event)" />
 
             <!-- 分页导航 -->
             <PaginationNav :current-page="paginationConfig.currentPage" :total-pages="paginationConfig.totalPages"
@@ -121,8 +124,29 @@ export default {
         searchQuery: {
             type: String,
             default: ''
+        },
+        // 布局控制相关属性
+        scale: {
+            type: Number,
+            default: 100
+        },
+        showLayoutControl: {
+            type: Boolean,
+            default: false
         }
     },
+    emits: [
+        'empty-state-action',
+        'add-item',
+        'add-folder',
+        'import-bookmark',
+        'sort-changed',
+        'search-query-changed',
+        'sort-by-changed',
+        'context-menu-click',
+        'page-change',
+        'update:scale'
+    ],
     computed: {
         currentEmptyState() {
             // 如果没有任何数据

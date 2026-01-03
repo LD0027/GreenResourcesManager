@@ -16,6 +16,9 @@
           @sort-by-changed="handleSortByChanged"
           @context-menu-click="handleContextMenuClick"
           @page-change="handleNovelPageChange"
+          :scale="scale"
+          :show-layout-control="true"
+          @update:scale="updateScale"
         >
     <!-- 主内容区域 -->
     <div 
@@ -32,7 +35,7 @@
         <!-- 小说列表 -->
         <div class="novel-list-section">
           <!-- 小说网格 -->
-          <div class="novels-grid" v-if="paginatedNovels.length > 0">
+          <div class="novels-grid" v-if="paginatedNovels.length > 0" :style="layoutStyles">
             <MediaCard
               v-for="novel in paginatedNovels" 
               :key="novel.id"
@@ -40,6 +43,7 @@
               type="novel"
               :isElectronEnvironment="true"
               :file-exists="novel.fileExists"
+              :scale="scale"
               @click="showNovelDetail"
               @contextmenu="(event) => ($refs.baseView as any).showContextMenuHandler(event, novel)"
               @action="handleNovelClick"
@@ -291,6 +295,7 @@ import { useNovelFilter } from '../../composables/novel/useNovelFilter'
 import { ref, PropType } from 'vue'
 import { PageConfig } from '../../types/page'
 import { EpubParser } from '../../utils/EpubParser'
+import { useDisplayLayout } from '../../composables/useDisplayLayout'
 
 import notify from '../../utils/NotificationService.ts'
 import alertService from '../../utils/AlertService.ts'
@@ -320,6 +325,9 @@ export default {
   setup(props) {
     // 初始化小说管理 composable
     const novelManagement = useNovelManagement(props.pageConfig.id)
+
+    // 使用显示布局 composable
+    const displayLayoutComposable = useDisplayLayout(80, 200)
     
     // 初始化小说筛选 composable
     const novelFilter = useNovelFilter({
@@ -376,6 +384,8 @@ export default {
       handleFilterEvent: novelFilter.handleFilterEvent,
       updateFilterData: novelFilter.updateFilterData,
       setFilterDataUpdatedCallback: novelFilter.setFilterDataUpdatedCallback,
+      // 显示布局相关
+      ...displayLayoutComposable,
       // 路径更新对话框
       showPathUpdateDialog,
       pathUpdateInfo

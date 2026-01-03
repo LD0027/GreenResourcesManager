@@ -16,6 +16,9 @@
           @sort-by-changed="handleSortByChanged"
           @context-menu-click="handleContextMenuClick"
           @page-change="handleAudioPageChange"
+          :scale="scale"
+          :show-layout-control="true"
+          @update:scale="updateScale"
         >
     <!-- 音频主内容区域 -->
     <div 
@@ -33,6 +36,8 @@
         <AudioGrid
           :audios="paginatedAudios"
           :isElectronEnvironment="true"
+          :scale="scale"
+          :layout-styles="layoutStyles"
           @audio-click="showAudioDetail"
           @audio-contextmenu="(event, audio) => ($refs.baseView as any).showContextMenuHandler(event, audio)"
           @audio-action="playAudio"
@@ -227,6 +232,7 @@ import { useAudioDragDrop } from '../../composables/audio/useAudioDragDrop'
 import { useAudioManagement } from '../../composables/audio/useAudioManagement'
 import { useAudioFilter } from '../../composables/audio/useAudioFilter'
 import { useAudioPlayback } from '../../composables/audio/useAudioPlayback'
+import { useDisplayLayout } from '../../composables/useDisplayLayout'
 import { formatDuration as formatDurationUtil } from '../../utils/formatters.ts'
 import { ref, computed } from 'vue'
 
@@ -243,6 +249,9 @@ export default {
   setup() {
     // 初始化音频时长 composable
     const { getAudioDuration } = useAudioDuration()
+
+    // 使用显示布局 composable
+    const displayLayoutComposable = useDisplayLayout(80, 280)
     
     // 初始化音频管理 composable
     const audioManagement = useAudioManagement()
@@ -283,6 +292,8 @@ export default {
       showPathUpdateDialog,
       pathUpdateInfo,
       audioDragDropComposable,
+      // 显示布局相关
+      ...displayLayoutComposable,
       // 音频管理相关（重命名避免冲突）
       audios: audioManagement.audios,
       isLoading: audioManagement.isLoading,

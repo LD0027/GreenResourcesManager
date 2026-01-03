@@ -4,7 +4,8 @@
     :pagination-config="gamePaginationConfig" :sort-by="sortBy" :search-query="searchQuery"
     @empty-state-action="handleEmptyStateAction" @add-item="showAddGameDialog" @sort-changed="handleSortChanged"
     @search-query-changed="handleSearchQueryChanged" @sort-by-changed="handleSortByChanged"
-    @context-menu-click="handleContextMenuClick" @page-change="handleGamePageChange">
+    @context-menu-click="handleContextMenuClick" @page-change="handleGamePageChange"
+    :scale="scale" :show-layout-control="true" @update:scale="updateScale">
     <!-- 主内容区域 -->
     <div class="game-content" @drop="handleDrop" @dragover="handleDragOver" @dragenter="handleDragEnter"
       @dragleave="handleDragLeave" :class="{ 'drag-over': dragDropComposable?.isDragOver || false }">
@@ -12,9 +13,11 @@
 
       <!-- 游戏网格 -->
       <GameGrid 
+        :scale="scale"
         :games="paginatedGames"
         :is-game-running="isGameRunning"
         :is-electron-environment="isElectronEnvironment"
+        :layout-styles="layoutStyles"
         @game-click="showGameDetail"
         @game-contextmenu="handleGameContextMenu"
         @game-action="launchGame"
@@ -117,6 +120,7 @@ import { useGamePlayTime } from '../../composables/game/useGamePlayTime'
 import { usePagination } from '../../composables/usePagination'
 import { useGameDragAndDrop, isArchiveFile } from '../../composables/game/useGameDragAndDrop'
 import { useGameRunningStore } from '../../stores/game-running'
+import { useDisplayLayout } from '../../composables/useDisplayLayout'
 
 export default {
   name: 'SoftwareView',
@@ -146,7 +150,7 @@ export default {
     const sortBy = ref<'name' | 'lastPlayed' | 'playTime' | 'added'>('name')
 
     // 使用筛选 composable
-    const filterComposable = useGameFilter(games, searchQuery, sortBy)
+    const filterComposable = useGameFilter(games, searchQuery, sortBy as any)
 
     // 使用管理 composable
     const managementComposable = useGameManagement(
@@ -158,6 +162,9 @@ export default {
 
     // 使用游戏运行状态 store（暴露给组件使用）
     const gameRunningStore = useGameRunningStore()
+
+    // 使用显示布局 composable
+    const displayLayoutComposable = useDisplayLayout(80, 400)
 
     // 获取父组件方法的辅助函数（在 Options API 中通过 this.$parent 访问）
     // 注意：这些函数会在组件实例化后通过 methods 中的包装方法设置
@@ -213,7 +220,9 @@ export default {
       ...toRefs(filterComposable),
       ...filterComposable,
       // 管理相关
-      ...toRefs(managementComposable),
+      // 显示布局相关
+      ...displayLayoutComposable,
+      // toRefs(managementComposable),
       ...managementComposable,
       // 截图相关
       ...toRefs(screenshotComposable),
@@ -1919,7 +1928,6 @@ export default {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: var(--spacing-xl);
   height: 100%;
   overflow-y: auto;
   position: relative;

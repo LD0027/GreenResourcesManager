@@ -16,6 +16,9 @@
           @sort-by-changed="handleSortByChanged"
           @context-menu-click="handleContextMenuClick"
           @page-change="handleAlbumPageChange"
+          :scale="scale"
+          :show-layout-control="true"
+          @update:scale="updateScale"
         >
     <!-- 主内容区域 -->
     <div 
@@ -27,9 +30,8 @@
       :class="{ 'drag-over': isDragOver || false }"
     >
 
-
     <!-- 专辑网格 -->
-    <div class="albums-grid" v-if="paginatedAlbums.length > 0">
+    <div class="albums-grid" v-if="paginatedAlbums.length > 0" :style="layoutStyles">
       <MediaCard
         v-for="album in paginatedAlbums" 
         :key="album.id"
@@ -37,6 +39,7 @@
         type="image"
         :isElectronEnvironment="true"
         :file-exists="album.fileExists"
+        :scale="scale"
         @click="showAlbumDetail"
         @contextmenu="(event) => ($refs.baseView as any).showContextMenuHandler(event, album)"
         @action="openAlbum"
@@ -180,6 +183,7 @@ import { useImageCache } from '../../composables/image/useImageCache'
 import { useImagePages } from '../../composables/image/useImagePages'
 import { useImageCover } from '../../composables/image/useImageCover'
 import { useResourceRating } from '../../composables/useResourceRating'
+import { useDisplayLayout } from '../../composables/useDisplayLayout'
 
 const IMAGE_COLLECTION_ACHIEVEMENTS = [
   { threshold: 50, id: 'image_collector_50' },
@@ -303,6 +307,9 @@ export default {
       folderPathRef: editAlbumFolderPath
     })
 
+    // 使用显示布局 composable
+    const displayLayoutComposable = useDisplayLayout(80, 200)
+
     // 解构 composable，排除 removeAlbum 避免与 methods 冲突
     const { removeAlbum, ...restAlbumComposable } = imageAlbumComposable
     
@@ -349,7 +356,9 @@ export default {
       previousPageGroup: imagePagesComposable.previousPageGroup,
       jumpToPageGroup: imagePagesComposable.jumpToPageGroup,
       resetPagination: imagePagesComposable.resetPagination,
-      updatePageSize: imagePagesComposable.updatePageSize,
+      // 显示布局相关
+      ...displayLayoutComposable,
+      // atePageSize: imagePagesComposable.updatePageSize,
       updateTotalPages: imagePagesComposable.updateTotalPages,
       // 封面管理相关（新专辑）
       ...imageCoverNewComposable,
@@ -1511,7 +1520,7 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: var(--spacing-xl);
-  padding: var(--spacing-xl);
+  padding: 10px 0;
 }
 
 .album-card {

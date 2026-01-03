@@ -17,6 +17,9 @@
           @sort-by-changed="handleSortByChanged"
           @context-menu-click="handleContextMenuClick"
           @page-change="handlePageChange"
+          :scale="scale"
+          :show-layout-control="true"
+          @update:scale="updateScale"
         >
     <!-- 主内容区域 -->
     <div 
@@ -29,7 +32,7 @@
     >
 
       <!-- 文件和文件夹网格 -->
-      <div class="items-grid" v-if="paginatedItems.length > 0">
+      <div class="items-grid" v-if="paginatedItems.length > 0" :style="layoutStyles">
         <MediaCard
           v-for="item in paginatedItems" 
           :key="item.id"
@@ -37,6 +40,7 @@
           :type="item.type || 'file'"
           :isElectronEnvironment="true"
           :file-exists="item.fileExists"
+          :scale="scale"
           @click="item.type === 'folder' ? showFolderDetail(item) : showFileDetail(item)"
           @contextmenu="(event) => ($refs.baseView as any).showContextMenuHandler(event, item)"
           @action="item.type === 'folder' ? openFolder(item) : openFile(item)"
@@ -205,6 +209,7 @@ import { PageConfig } from '../../types/page.ts'
 import { usePagination } from '../../composables/usePagination.ts'
 import { useVideoFilter } from '../../composables/video/useVideoFilter.ts'
 import { useVideoFolder } from '../../composables/video/useVideoFolder.ts'
+import { useDisplayLayout } from '../../composables/useDisplayLayout'
 // 通过 preload 暴露的 electronAPI 进行调用
 
 // 简单的文件管理器类
@@ -300,6 +305,9 @@ export default {
   },
   setup(props) {
     // 文件列表
+
+    // 使用显示布局 composable
+    const displayLayoutComposable = useDisplayLayout(80, 350)
     const files = ref([])
     
     // 使用文件夹管理 composable（传入页面ID以隔离数据）
@@ -372,6 +380,8 @@ export default {
       ...filterComposable,
       // 分页相关
       ...paginationComposable,
+      // 显示布局相关
+      ...displayLayoutComposable,
       // 统一的资源更新函数
       updateItemResource
     }

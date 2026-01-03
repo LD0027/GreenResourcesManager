@@ -26,6 +26,11 @@
     </div>
     
     <div class="toolbar-right">
+      <LayoutControl
+        v-if="showLayoutControl"
+        :scale="scale"
+        @update:scale="$emit('update:scale', $event)"
+      />
       <select :value="sortBy" @change="handleSortChange" class="sort-select">
         <option 
           v-for="option in sortOptions" 
@@ -40,8 +45,13 @@
 </template>
 
 <script>
+import LayoutControl from './LayoutControl.vue'
+
 export default {
   name: 'Toolbar',
+  components: {
+    LayoutControl
+  },
   props: {
     searchQuery: {
       type: String,
@@ -80,9 +90,13 @@ export default {
         { value: 'added-desc', label: '按添加时间（降序）' }
       ]
     },
-    pageType: {
-      type: String,
-      default: 'games'
+    scale: {
+      type: Number,
+      default: 100
+    },
+    showLayoutControl: {
+      type: Boolean,
+      default: false
     }
   },
   emits: [
@@ -91,7 +105,8 @@ export default {
     'import-bookmark',
     'update:searchQuery',
     'update:sortBy',
-    'sort-changed'
+    'sort-changed',
+    'update:scale'
   ],
   mounted() {
     console.log('🔍 Toolbar mounted, 初始 sortBy:', this.sortBy)
