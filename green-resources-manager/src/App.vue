@@ -1086,20 +1086,14 @@ export default {
           this.lastBackupTime = new Date()
           console.log('✅ 自动备份成功:', result.backupPath)
           // 显示通知
-          if (this.$refs.toastNotification) {
-            this.$refs.toastNotification.show('success', '自动备份成功', `存档已备份到: ${result.backupPath}`)
-          }
+          notificationService.success('自动备份成功', `存档已备份到: ${result.backupPath}`)
         } else {
           console.error('❌ 自动备份失败:', result.error)
-          if (this.$refs.toastNotification) {
-            this.$refs.toastNotification.show('error', '自动备份失败', result.error)
-          }
+          notificationService.error('自动备份失败', result.error)
         }
       } catch (error) {
         console.error('执行自动备份失败:', error)
-        if (this.$refs.toastNotification) {
-          this.$refs.toastNotification.show('error', '自动备份失败', error.message)
-        }
+        notificationService.error('自动备份失败', error.message)
       }
     },
     
