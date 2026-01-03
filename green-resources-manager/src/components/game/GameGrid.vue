@@ -5,6 +5,7 @@
       :key="game.id" 
       :item="game" 
       type="game"
+      :scale="scale"
       :is-running="isGameRunning(game)" 
       :is-electron-environment="isElectronEnvironment"
       :file-exists="game.fileExists" 

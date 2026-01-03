@@ -2,6 +2,7 @@
   <div 
     class="media-card"
     :class="ratingBorderClass"
+    :style="{ '--card-scale': scale / 100 }"
     @click="$emit('click', item)"
     @contextmenu="$emit('contextmenu', $event, item)"
   >
@@ -53,10 +54,10 @@
       
       <!-- 游戏特有信息 -->
       <template v-if="type === 'game'">
-        <p class="media-subtitle">{{ item.developer }}</p>
-        <p class="media-tertiary" v-if="item.publisher && item.publisher !== '未知发行商'">{{ item.publisher }}</p>
-        <p class="media-description" v-if="item.description">{{ item.description }}</p>
-        <div class="media-tags" v-if="displayTags.length > 0 && scale >= 30">
+        <p class="media-subtitle" v-if="scale >= 50">{{ item.developer }}</p>
+        <p class="media-tertiary" v-if="item.publisher && item.publisher !== '未知发行商' && scale >= 50">{{ item.publisher }}</p>
+        <p class="media-description" v-if="item.description && scale >= 50">{{ item.description }}</p>
+        <div class="media-tags" v-if="displayTags.length > 0 && scale >= 40">
           <span 
             v-for="tag in displayTags.slice(0, 9)" 
             :key="tag" 
@@ -64,7 +65,7 @@
           >{{ tag }}</span>
           <span v-if="displayTags.length > 9" class="media-tag-more">+{{ displayTags.length - 9 }}</span>
         </div>
-        <div class="media-stats" v-if="scale >= 30">
+        <div class="media-stats" v-if="scale >= 40">
           <span class="stat-item">
             <span class="play-time-label">总时长:</span>
             {{ formatPlayTime(item.playTime) }}
@@ -86,9 +87,9 @@
       
       <!-- 图片特有信息 -->
       <template v-if="type === 'image'">
-        <p class="media-subtitle" v-if="item.author">{{ item.author }}</p>
-        <p class="media-description" v-if="item.description">{{ item.description }}</p>
-        <div class="media-tags" v-if="displayTags.length > 0 && scale >= 30">
+        <p class="media-subtitle" v-if="item.author && scale >= 50">{{ item.author }}</p>
+        <p class="media-description" v-if="item.description && scale >= 50">{{ item.description }}</p>
+        <div class="media-tags" v-if="displayTags.length > 0 && scale >= 40">
           <span 
             v-for="tag in displayTags.slice(0, 3)" 
             :key="tag" 
@@ -96,17 +97,17 @@
           >{{ tag }}</span>
           <span v-if="displayTags.length > 3" class="media-tag-more">+{{ displayTags.length - 3 }}</span>
         </div>
-        <div class="media-stats" v-if="scale >= 30">
+        <div class="media-stats" v-if="scale >= 40">
           <span class="stat-item">{{ formatLastViewed(item.lastViewed) }}</span>
         </div>
       </template>
       
       <!-- 小说特有信息 -->
       <template v-if="type === 'novel'">
-        <p class="media-subtitle" v-if="item.author">{{ item.author }}</p>
-        <p class="media-tertiary" v-if="item.genre">{{ item.genre }}</p>
-        <p class="media-description" v-if="item.description">{{ item.description }}</p>
-        <div class="media-tags" v-if="displayTags.length > 0 && scale >= 30">
+        <p class="media-subtitle" v-if="item.author && scale >= 50">{{ item.author }}</p>
+        <p class="media-tertiary" v-if="item.genre && scale >= 50">{{ item.genre }}</p>
+        <p class="media-description" v-if="item.description && scale >= 50">{{ item.description }}</p>
+        <div class="media-tags" v-if="displayTags.length > 0 && scale >= 40">
           <span 
             v-for="tag in displayTags.slice(0, 3)" 
             :key="tag" 
@@ -114,7 +115,7 @@
           >{{ tag }}</span>
           <span v-if="displayTags.length > 3" class="media-tag-more">+{{ displayTags.length - 3 }}</span>
         </div>
-        <div class="media-stats" v-if="scale >= 30">
+        <div class="media-stats" v-if="scale >= 40">
           <div class="progress-bar">
             <div class="progress-fill" :style="{ width: (item.readProgress || 0) + '%' }"></div>
           </div>
@@ -131,9 +132,9 @@
       
       <!-- 视频特有信息 -->
       <template v-if="type === 'video'">
-        <p class="media-subtitle" v-if="item.series">{{ item.series }}</p>
-        <p class="media-description" v-if="item.description">{{ item.description }}</p>
-        <div class="media-tags" v-if="displayTags.length > 0 && scale >= 30">
+        <p class="media-subtitle" v-if="item.series && scale >= 50">{{ item.series }}</p>
+        <p class="media-description" v-if="item.description && scale >= 50">{{ item.description }}</p>
+        <div class="media-tags" v-if="displayTags.length > 0 && scale >= 40">
           <span 
             v-for="tag in displayTags.slice(0, 3)" 
             :key="tag" 
@@ -141,12 +142,12 @@
           >{{ tag }}</span>
           <span v-if="displayTags.length > 3" class="media-tag-more">+{{ displayTags.length - 3 }}</span>
         </div>
-        <div class="media-actors" v-if="item.actors && item.actors.length > 0">
+        <div class="media-actors" v-if="item.actors && item.actors.length > 0 && scale >= 50">
           <span class="actors-label">演员:</span>
           <span class="actors-list">{{ item.actors.slice(0, 2).join(', ') }}</span>
           <span v-if="item.actors.length > 2" class="actors-more">等{{ item.actors.length }}人</span>
         </div>
-        <div class="media-stats" v-if="scale >= 30">
+        <div class="media-stats" v-if="scale >= 40">
           <div class="stats-row">
             <span class="watch-count">观看 {{ item.watchCount || 0 }} 次</span>
             <span class="last-watched">{{ formatLastWatched(item.lastWatched) }}</span>
@@ -156,9 +157,9 @@
       
       <!-- 音频特有信息 -->
       <template v-if="type === 'audio'">
-        <p class="media-subtitle" v-if="item.artist">{{ item.artist }}</p>
-        <p class="media-description" v-if="item.notes">{{ item.notes }}</p>
-        <div class="media-tags" v-if="displayTags.length > 0 && scale >= 30">
+        <p class="media-subtitle" v-if="item.artist && scale >= 50">{{ item.artist }}</p>
+        <p class="media-description" v-if="item.notes && scale >= 50">{{ item.notes }}</p>
+        <div class="media-tags" v-if="displayTags.length > 0 && scale >= 40">
           <span 
             v-for="tag in displayTags.slice(0, 3)" 
             :key="tag" 
@@ -166,12 +167,12 @@
           >{{ tag }}</span>
           <span v-if="displayTags.length > 3" class="media-tag-more">+{{ displayTags.length - 3 }}</span>
         </div>
-        <div class="media-actors" v-if="item.actors && item.actors.length > 0">
+        <div class="media-actors" v-if="item.actors && item.actors.length > 0 && scale >= 50">
           <span class="actors-label">演员:</span>
           <span class="actors-list">{{ item.actors.slice(0, 2).join(', ') }}</span>
           <span v-if="item.actors.length > 2" class="actors-more">等{{ item.actors.length }}人</span>
         </div>
-        <div class="media-stats" v-if="scale >= 30">
+        <div class="media-stats" v-if="scale >= 40">
           <div class="stats-row">
             <span class="play-count">播放 {{ item.playCount || 0 }} 次</span>
             <span class="last-played">{{ formatLastPlayed(item.lastPlayed) }}</span>
@@ -181,9 +182,9 @@
       
       <!-- 文件夹特有信息 -->
       <template v-if="type === 'folder'">
-        <p class="media-subtitle" v-if="item.series">{{ item.series }}</p>
-        <p class="media-description" v-if="item.description">{{ item.description }}</p>
-        <div class="media-tags" v-if="displayTags.length > 0 && scale >= 30">
+        <p class="media-subtitle" v-if="item.series && scale >= 50">{{ item.series }}</p>
+        <p class="media-description" v-if="item.description && scale >= 50">{{ item.description }}</p>
+        <div class="media-tags" v-if="displayTags.length > 0 && scale >= 40">
           <span 
             v-for="tag in displayTags.slice(0, 3)" 
             :key="tag" 
@@ -191,12 +192,12 @@
           >{{ tag }}</span>
           <span v-if="displayTags.length > 3" class="media-tag-more">+{{ displayTags.length - 3 }}</span>
         </div>
-        <div class="media-actors" v-if="item.actors && item.actors.length > 0">
+        <div class="media-actors" v-if="item.actors && item.actors.length > 0 && scale >= 50">
           <span class="actors-label">演员:</span>
           <span class="actors-list">{{ item.actors.slice(0, 2).join(', ') }}</span>
           <span v-if="item.actors.length > 2" class="actors-more">等{{ item.actors.length }}人</span>
         </div>
-        <div class="media-stats" v-if="scale >= 30">
+        <div class="media-stats" v-if="scale >= 40">
           <div class="stats-row">
             <span class="stat-item">{{ item.videoCount || 0 }} 个视频</span>
             <span class="stat-item">{{ formatAddedDate(item.addedDate) }}</span>
@@ -1065,7 +1066,8 @@ $running-color-dark: #10b981;
 .media-image {
   position: relative;
   width: 100%;
-  height: 280px;
+  height: auto;
+  aspect-ratio: 16/9;
   overflow: hidden;
 }
 
@@ -1078,13 +1080,13 @@ $running-color-dark: #10b981;
 
 .media-badge {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
+  bottom: calc(8px * var(--card-scale, 1));
+  right: calc(8px * var(--card-scale, 1));
   background: rgba(0, 0, 0, $badge-bg-opacity);
   color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: calc(4px * var(--card-scale, 1)) calc(8px * var(--card-scale, 1));
+  border-radius: calc(4px * var(--card-scale, 1));
+  font-size: calc(12px * var(--card-scale, 1));
   font-weight: 500;
   font-family: 'Courier New', monospace;
   z-index: 10;
@@ -1133,26 +1135,26 @@ $running-color-dark: #10b981;
 }
 
 .media-info {
-  padding: 15px;
+  padding: calc(15px * var(--card-scale, 1));
 }
 
 .media-title {
   color: var(--text-primary);
-  font-size: 1.1rem;
+  font-size: calc(1.1rem * var(--card-scale, 1));
   font-weight: 600;
-  margin-bottom: 5px;
+  margin-bottom: calc(5px * var(--card-scale, 1));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   transition: color 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--card-scale, 1));
 }
 
 .exe-icon {
-  width: 20px;
-  height: 20px;
+  width: calc(20px * var(--card-scale, 1));
+  height: calc(20px * var(--card-scale, 1));
   flex-shrink: 0;
   object-fit: contain;
   display: var(--show-icon, block);
@@ -1160,8 +1162,8 @@ $running-color-dark: #10b981;
 
 .media-subtitle {
   color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-bottom: 6px;
+  font-size: calc(0.9rem * var(--card-scale, 1));
+  margin-bottom: calc(6px * var(--card-scale, 1));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1170,8 +1172,8 @@ $running-color-dark: #10b981;
 
 .media-tertiary {
   color: var(--text-tertiary);
-  font-size: 0.85rem;
-  margin-bottom: 8px;
+  font-size: calc(0.85rem * var(--card-scale, 1));
+  margin-bottom: calc(8px * var(--card-scale, 1));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1181,8 +1183,8 @@ $running-color-dark: #10b981;
 
 .media-description {
   color: var(--text-tertiary);
-  font-size: 0.8rem;
-  margin-bottom: 8px;
+  font-size: calc(0.8rem * var(--card-scale, 1));
+  margin-bottom: calc(8px * var(--card-scale, 1));
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1203,9 +1205,9 @@ $running-color-dark: #10b981;
 .media-tag {
   background: var(--accent-color);
   color: white;
-  padding: 2px 6px;
-  border-radius: 8px;
-  font-size: 0.7rem;
+  padding: calc(2px * var(--card-scale, 1)) calc(6px * var(--card-scale, 1));
+  border-radius: calc(8px * var(--card-scale, 1));
+  font-size: calc(0.7rem * var(--card-scale, 1));
   font-weight: 500;
   transition: background 0.3s ease;
 }
@@ -1213,9 +1215,9 @@ $running-color-dark: #10b981;
 .media-tag-more {
   background: var(--bg-tertiary);
   color: var(--text-tertiary);
-  padding: 2px 6px;
-  border-radius: 8px;
-  font-size: 0.7rem;
+  padding: calc(2px * var(--card-scale, 1)) calc(6px * var(--card-scale, 1));
+  border-radius: calc(8px * var(--card-scale, 1));
+  font-size: calc(0.7rem * var(--card-scale, 1));
   font-weight: 500;
   border: 1px solid var(--border-color);
   transition: all 0.3s ease;
@@ -1224,18 +1226,18 @@ $running-color-dark: #10b981;
 .media-stats {
   display: var(--show-stats, flex);
   flex-direction: column;
-  gap: 3px;
+  gap: calc(3px * var(--card-scale, 1));
 }
 
 .media-meta {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: calc(3px * var(--card-scale, 1));
 }
 
 .stat-item, .meta-item {
   color: var(--text-tertiary);
-  font-size: 0.8rem;
+  font-size: calc(0.8rem * var(--card-scale, 1));
   transition: color 0.3s ease;
 }
 
@@ -1337,16 +1339,16 @@ $running-color-dark: #10b981;
 
 .folder-indicator {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
+  bottom: calc(8px * var(--card-scale, 1));
+  left: calc(8px * var(--card-scale, 1));
   background: $info-color;
   color: white;
-  border-radius: 6px;
-  padding: 4px 8px;
+  border-radius: calc(6px * var(--card-scale, 1));
+  padding: calc(4px * var(--card-scale, 1)) calc(8px * var(--card-scale, 1));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: calc(14px * var(--card-scale, 1));
   font-weight: bold;
   z-index: 10;
   backdrop-filter: blur($backdrop-blur-small);
@@ -1356,17 +1358,17 @@ $running-color-dark: #10b981;
 
 .favorite-indicator {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: calc(8px * var(--card-scale, 1));
+  right: calc(8px * var(--card-scale, 1));
   background: rgba(251, 191, 36, $indicator-bg-opacity);
   color: white;
   border-radius: 50%;
-  width: 28px;
-  height: 28px;
+  width: calc(28px * var(--card-scale, 1));
+  height: calc(28px * var(--card-scale, 1));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: calc(16px * var(--card-scale, 1));
   z-index: 10;
   backdrop-filter: blur($backdrop-blur-small);
   border: 1px solid rgba(255, 255, 255, 0.2);
