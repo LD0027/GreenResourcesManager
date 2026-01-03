@@ -129,6 +129,8 @@
 <script lang="ts">
 import saveManager from '../../utils/SaveManager'
 import notify from '../../utils/NotificationService'
+import alertService from '../../utils/AlertService'
+import confirmService from '../../utils/ConfirmService'
 import SettingToggle from './SettingToggle.vue'
 import SettingSelect from './SettingSelect.vue'
 import SettingInput from './SettingInput.vue'
@@ -216,19 +218,19 @@ export default {
             )
           } else {
             console.error('开机自启设置更新失败:', result.error)
-            alert(`开机自启设置失败: ${result.error}`)
+            alertService.error(`开机自启设置失败: ${result.error}`)
             // 恢复开关状态
             this.updateSetting('autoStart', !newValue)
           }
         } else {
           console.warn('当前环境不支持开机自启功能')
-          alert('当前环境不支持开机自启功能')
+          alertService.warning('当前环境不支持开机自启功能')
           // 恢复开关状态
           this.updateSetting('autoStart', !newValue)
         }
       } catch (error: any) {
         console.error('更新开机自启设置失败:', error)
-        alert('更新开机自启设置失败: ' + error.message)
+        alertService.error('更新开机自启设置失败: ' + error.message)
         // 恢复开关状态
         this.updateSetting('autoStart', !newValue)
       }
@@ -559,7 +561,7 @@ export default {
     },
     
     async resetSettings() {
-      if (confirm('确定要重置所有设置吗？此操作不可撤销！')) {
+      if (await confirmService.confirm('确定要重置所有设置吗？此操作不可撤销！')) {
         try {
           // 触发重置事件，让父组件处理
           this.$emit('action', { type: 'reset-settings' })

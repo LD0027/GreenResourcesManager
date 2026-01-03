@@ -181,6 +181,7 @@ import DetailPanel from '../../components/DetailPanel.vue'
 
 import saveManager from '../../utils/SaveManager.ts'
 import notify from '../../utils/NotificationService.ts'
+import alertService from '../../utils/AlertService.ts'
 import confirmService from '../../utils/ConfirmService.ts'
 import { useWebsiteManagement } from '../../composables/website/useWebsiteManagement'
 import { useWebsiteFilter } from '../../composables/website/useWebsiteFilter'
@@ -414,7 +415,7 @@ export default {
         this.updateFilterData()
       } catch (error) {
         console.error('❌ 加载网站数据失败:', error)
-        alert('加载网站数据失败: ' + error.message)
+        alertService.error('加载网站数据失败: ' + error.message)
       } finally {
         this.isLoading = false
       }
@@ -454,7 +455,7 @@ export default {
     async addWebsite() {
       try {
         if (!this.isFormValid) {
-          alert('请填写有效的URL')
+          alertService.warning('请填写有效的URL')
           return
         }
         
@@ -473,7 +474,7 @@ export default {
         notify.native('网站添加成功', `已添加网站: ${website.name}`)
       } catch (error) {
         console.error('添加网站失败:', error)
-        alert('添加网站失败: ' + error.message)
+        alertService.error('添加网站失败: ' + error.message)
       }
     },
     
@@ -506,7 +507,7 @@ export default {
             console.log('网站访问成功:', originalWebsite.name)
             notify.native('网站已打开', `正在访问: ${originalWebsite.name}`)
           } else {
-            alert(`访问失败: ${result.error}`)
+            alertService.error(`访问失败: ${result.error}`)
           }
         } else {
           // 降级处理：在浏览器中打开
@@ -514,7 +515,7 @@ export default {
         }
       } catch (error) {
         console.error('访问网站失败:', error)
-        alert('访问网站失败: ' + error.message)
+        alertService.error('访问网站失败: ' + error.message)
       }
     },
     
@@ -725,7 +726,7 @@ export default {
     async saveWebsiteEdit() {
       try {
         if (!this.isEditFormValid) {
-          alert('请填写有效的URL')
+          alertService.warning('请填写有效的URL')
           return
         }
         
@@ -770,7 +771,7 @@ export default {
         }
       } catch (error: any) {
         console.error('切换收藏状态失败:', error)
-        alert('切换收藏状态失败: ' + error.message)
+        alertService.error('切换收藏状态失败: ' + error.message)
       }
     },
     
