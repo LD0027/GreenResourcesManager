@@ -2,6 +2,7 @@
   <div 
     class="media-card"
     :class="ratingBorderClass"
+    :data-type="type"
     :style="{ '--card-scale': scale / 100 }"
     @click="$emit('click', item)"
     @contextmenu="$emit('contextmenu', $event, item)"
@@ -1069,6 +1070,11 @@ $running-color-dark: #10b981;
   height: auto;
   aspect-ratio: 16/9;
   overflow: hidden;
+}
+
+/* 图片类型使用更适合竖向图片的宽高比 */
+.media-card[data-type="image"] .media-image {
+  aspect-ratio: 3/4;
 }
 
 .media-image img {

@@ -307,8 +307,8 @@ export default {
       folderPathRef: editAlbumFolderPath
     })
 
-    // 使用显示布局 composable
-    const displayLayoutComposable = useDisplayLayout(80, 200)
+    // 使用显示布局 composable（图片类型使用更大的基础宽度，适合竖向图片）
+    const displayLayoutComposable = useDisplayLayout(80, 280)
 
     // 解构 composable，排除 removeAlbum 避免与 methods 冲突
     const { removeAlbum, ...restAlbumComposable } = imageAlbumComposable
@@ -1515,12 +1515,13 @@ export default {
   }
 }
 
-// 网格
+// 网格（图片类型使用更大的最小宽度，适合竖向图片）
 .albums-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: var(--spacing-xl);
   padding: 10px 0;
+  justify-content: stretch;
 }
 
 .album-card {

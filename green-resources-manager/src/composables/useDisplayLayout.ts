@@ -11,8 +11,8 @@ export function useDisplayLayout(initialScale = 80, baseWidth = 200) {
     const scaledWidth = Math.max(100, Math.round(baseWidth * (scale.value / 100)))
     return {
       display: 'grid',
-      gridTemplateColumns: `repeat(auto-fill, ${scaledWidth}px)`,
-      justifyContent: 'start'
+      gridTemplateColumns: `repeat(auto-fill, minmax(${scaledWidth}px, 1fr))`,
+      justifyContent: 'stretch'
     }
   })
 
