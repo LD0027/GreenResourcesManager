@@ -48,119 +48,45 @@
       </div>
     </div>
 
-    <!-- 添加/编辑文件对话框 -->
-    <div v-if="showAddDialog || showEditDialog" class="modal-overlay" @click="showAddDialog ? closeAddFileDialog() : closeEditDialog()">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>{{ showAddDialog ? '添加文件' : '编辑文件' }}</h3>
-          <button class="btn-close" @click="showAddDialog ? closeAddFileDialog() : closeEditDialog()">×</button>
-        </div>
-        
-        <div class="modal-body">
-          <FormField
-            label="文件名称 *"
-            type="text"
-            :model-value="showAddDialog ? newFileForm.name : editFileForm.name"
-            @update:model-value="showAddDialog ? (newFileForm.name = $event) : (editFileForm.name = $event)"
-            placeholder="文件名称"
-          />
-          
-          <FormField
-            label="文件路径 *"
-            type="text"
-            :model-value="showAddDialog ? newFileForm.filePath : editFileForm.filePath"
-            placeholder="文件路径"
-            readonly
-          />
-          <button class="btn-select-file" @click="showAddDialog ? selectFile() : browseEditFile()">
-            选择文件
-          </button>
-          
-          <FormField
-            label="描述"
-            type="textarea"
-            :model-value="showAddDialog ? newFileForm.description : editFileForm.description"
-            @update:model-value="showAddDialog ? (newFileForm.description = $event) : (editFileForm.description = $event)"
-            placeholder="文件描述（可选）..."
-            :rows="3"
-          />
-          
-          <FormField
-            label="标签"
-            type="tags"
-            :model-value="showAddDialog ? newFileForm.tags : editFileForm.tags"
-            @update:model-value="showAddDialog ? (newFileForm.tags = $event) : (editFileForm.tags = $event)"
-            :tagInput="showAddDialog ? fileTagsInput : editTagsInput"
-            @update:tagInput="showAddDialog ? (fileTagsInput = $event) : (editTagsInput = $event)"
-            @add-tag="showAddDialog ? addFileTag() : addEditTag()"
-            @remove-tag="showAddDialog ? removeFileTag($event) : removeEditTag($event)"
-            tag-placeholder="输入标签后按回车或逗号添加"
-          />
-        </div>
-        
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="showAddDialog ? closeAddFileDialog() : closeEditDialog()">取消</button>
-          <button class="btn-confirm" @click="showAddDialog ? handleAddFile() : saveEditedFile()">确认</button>
-        </div>
-      </div>
-    </div>
+    <!-- 添加文件对话框 -->
+    <AddFileDialog
+      ref="addFileDialog"
+      :visible="showAddDialog"
+      :is-electron-environment="true"
+      @close="closeAddFileDialog"
+      @confirm="handleAddFileConfirm"
+      @browse-file="selectFile"
+    />
 
-    <!-- 添加/编辑文件夹对话框 -->
-    <div v-if="showFolderDialog || showEditFolderDialog" class="modal-overlay" @click="showFolderDialog ? closeAddFolderDialog() : closeEditFolderDialog()">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>{{ showFolderDialog ? '添加文件夹' : '编辑文件夹' }}</h3>
-          <button class="btn-close" @click="showFolderDialog ? closeAddFolderDialog() : closeEditFolderDialog()">×</button>
-        </div>
-        
-        <div class="modal-body">
-          <FormField
-            label="文件夹名称 *"
-            type="text"
-            :model-value="showFolderDialog ? newFolder.name : editFolderForm.name"
-            @update:model-value="showFolderDialog ? (newFolder.name = $event) : (editFolderForm.name = $event)"
-            placeholder="文件夹名称"
-          />
-          
-          <FormField
-            label="文件夹路径 *"
-            type="text"
-            :model-value="showFolderDialog ? newFolder.folderPath : editFolderForm.folderPath"
-            placeholder="文件夹路径"
-            readonly
-          />
-          <button class="btn-select-file" @click="showFolderDialog ? selectNewFolderPath() : selectEditFolderPath()">
-            选择文件夹
-          </button>
-          
-          <FormField
-            label="描述"
-            type="textarea"
-            :model-value="showFolderDialog ? newFolder.description : editFolderForm.description"
-            @update:model-value="showFolderDialog ? (newFolder.description = $event) : (editFolderForm.description = $event)"
-            placeholder="文件夹描述（可选）..."
-            :rows="3"
-          />
-          
-          <FormField
-            label="标签"
-            type="tags"
-            :model-value="showFolderDialog ? newFolder.tags : editFolderForm.tags"
-            @update:model-value="showFolderDialog ? (newFolder.tags = $event) : (editFolderForm.tags = $event)"
-            :tagInput="showFolderDialog ? folderTagsInput : editFolderTagsInput"
-            @update:tagInput="showFolderDialog ? (folderTagsInput = $event) : (editFolderTagsInput = $event)"
-            @add-tag="showFolderDialog ? addFolderTag() : addEditFolderTag()"
-            @remove-tag="showFolderDialog ? removeFolderTag($event) : removeEditFolderTag($event)"
-            tag-placeholder="输入标签后按回车或逗号添加"
-          />
-        </div>
-        
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="showFolderDialog ? closeAddFolderDialog() : closeEditFolderDialog()">取消</button>
-          <button class="btn-confirm" @click="showFolderDialog ? addFolder() : saveEditedFolder()">确认</button>
-        </div>
-      </div>
-    </div>
+    <!-- 编辑文件对话框 -->
+    <EditFileDialog
+      :visible="showEditDialog"
+      :file="editFileForm"
+      :is-electron-environment="true"
+      @close="closeEditDialog"
+      @confirm="handleEditFileConfirm"
+      @browse-file="browseEditFile"
+    />
+
+    <!-- 添加文件夹对话框 -->
+    <AddFolderDialog
+      ref="addFolderDialog"
+      :visible="showFolderDialog"
+      :is-electron-environment="true"
+      @close="closeAddFolderDialog"
+      @confirm="handleAddFolderConfirm"
+      @browse-folder="selectNewFolderPath"
+    />
+
+    <!-- 编辑文件夹对话框 -->
+    <EditFolderDialog
+      :visible="showEditFolderDialog"
+      :folder="editFolderForm"
+      :is-electron-environment="true"
+      @close="closeEditFolderDialog"
+      @confirm="handleEditFolderConfirm"
+      @browse-folder="selectEditFolderPath"
+    />
 
     <!-- 文件/文件夹详情对话框 -->
     <DetailPanel
@@ -199,6 +125,10 @@ import FormField from '../../components/FormField.vue'
 import MediaCard from '../../components/MediaCard.vue'
 import DetailPanel from '../../components/DetailPanel.vue'
 import PathUpdateDialog from '../../components/PathUpdateDialog.vue'
+import AddFileDialog from '../../components/other/AddFileDialog.vue'
+import EditFileDialog from '../../components/other/EditFileDialog.vue'
+import AddFolderDialog from '../../components/other/AddFolderDialog.vue'
+import EditFolderDialog from '../../components/other/EditFolderDialog.vue'
 
 import saveManager from '../../utils/SaveManager.ts'
 import notify from '../../utils/NotificationService.ts'
@@ -295,6 +225,10 @@ export default {
     MediaCard,
     DetailPanel,
     PathUpdateDialog,
+    AddFileDialog,
+    EditFileDialog,
+    AddFolderDialog,
+    EditFolderDialog
   },
   emits: ['filter-data-updated'],
   props: {
@@ -398,41 +332,12 @@ export default {
       selectedItem: null,
       searchQuery: '',
       sortBy: 'name',
-      // 添加文件表单
-      newFileForm: {
-        name: '',
-        description: '',
-        tags: [],
-        filePath: ''
-      },
-      fileTagsInput: '',
-      newFolder: {
-        name: '',
-        description: '',
-        tags: [],
-        folderPath: ''
-      },
-      folderTagsInput: '',
       // 编辑相关
       showEditDialog: false,
-      editFileForm: {
-        id: '',
-        name: '',
-        description: '',
-        tags: [],
-        filePath: ''
-      },
-      editTagsInput: '',
+      editFileForm: null,
       // 编辑文件夹相关
       showEditFolderDialog: false,
-      editFolderForm: {
-        id: '',
-        name: '',
-        description: '',
-        tags: [],
-        folderPath: ''
-      },
-      editFolderTagsInput: '',
+      editFolderForm: null,
       // 排序选项
       sortOptions: [
         { value: 'name', label: '按名称排序' },
@@ -869,23 +774,11 @@ export default {
     // detectFoldersFromFiles, processMultipleVideoFiles, processMultipleFolders, extractVideoName 已移至 composable
 
     showAddFileDialog() {
-      this.resetNewFileForm()
       this.showAddDialog = true
     },
 
     closeAddFileDialog() {
       this.showAddDialog = false
-      this.resetNewFileForm()
-    },
-
-    resetNewFileForm() {
-      this.newFileForm = {
-        name: '',
-        description: '',
-        tags: [],
-        filePath: ''
-      }
-      this.fileTagsInput = ''
     },
 
     async selectFile() {
@@ -901,12 +794,16 @@ export default {
         }
         
         if (filePath) {
-          this.newFileForm.filePath = filePath
-          if (!this.newFileForm.name || !this.newFileForm.name.trim()) {
-            // 从路径提取文件名
-            const normalized = filePath.replace(/\\/g, '/')
-            const filename = normalized.substring(normalized.lastIndexOf('/') + 1)
-            this.newFileForm.name = filename
+          // 通过 ref 更新对话框中的数据
+          const dialog = this.$refs.addFileDialog
+          if (dialog && dialog.formData) {
+            dialog.formData.filePath = filePath
+            if (!dialog.formData.name || !dialog.formData.name.trim()) {
+              // 从路径提取文件名
+              const normalized = filePath.replace(/\\/g, '/')
+              const filename = normalized.substring(normalized.lastIndexOf('/') + 1)
+              dialog.formData.name = filename
+            }
           }
         }
       } catch (error) {
@@ -915,52 +812,12 @@ export default {
       }
     },
 
-    addFileTag() {
-      const tag = this.fileTagsInput.trim()
-      if (tag && !this.newFileForm.tags.includes(tag)) {
-        this.newFileForm.tags.push(tag)
-        this.fileTagsInput = ''
-      }
-    },
-
-    removeFileTag(index) {
-      this.newFileForm.tags.splice(index, 1)
-    },
-
     showAddFolderDialog() {
-      console.log('showAddFolderDialog 被调用')
-      console.log('当前 showFolderDialog 值:', this.showFolderDialog)
-      this.resetNewFolder()
       this.showFolderDialog = true
-      console.log('showFolderDialog 设置为:', this.showFolderDialog)
-      console.log('newFolder 数据:', this.newFolder)
     },
 
     closeAddFolderDialog() {
       this.showFolderDialog = false
-      this.resetNewFolder()
-    },
-
-    resetNewFolder() {
-      this.newFolder = {
-        name: '',
-        description: '',
-        tags: [],
-        folderPath: ''
-      }
-      this.folderTagsInput = ''
-    },
-
-
-    addFolderTag() {
-      const tag = this.folderTagsInput.trim()
-      if (tag && !this.newFolder.tags.includes(tag)) {
-        this.newFolder.tags.push(tag)
-        this.folderTagsInput = ''
-      }
-    },
-    removeFolderTag(index) {
-      this.newFolder.tags.splice(index, 1)
     },
 
     async selectNewFolderPath() {
@@ -968,10 +825,14 @@ export default {
         if (window.electronAPI && window.electronAPI.selectFolder) {
           const result = await window.electronAPI.selectFolder()
           if (result && result.success && result.path) {
-            this.newFolder.folderPath = result.path
-            if (!this.newFolder.name || !this.newFolder.name.trim()) {
-              const parts = result.path.replace(/\\/g, '/').split('/')
-              this.newFolder.name = parts[parts.length - 1]
+            // 通过 ref 更新对话框中的数据
+            const dialog = this.$refs.addFolderDialog
+            if (dialog && dialog.formData) {
+              dialog.formData.folderPath = result.path
+              if (!dialog.formData.name || !dialog.formData.name.trim()) {
+                const parts = result.path.replace(/\\/g, '/').split('/')
+                dialog.formData.name = parts[parts.length - 1]
+              }
             }
           }
         }
@@ -1000,10 +861,8 @@ export default {
       }
     },
 
-    async handleAddFile() {
+    async handleAddFileConfirm(fileData) {
       try {
-        const fileData = { ...this.newFileForm }
-        
         // 如果没有名称，从文件路径提取
         if (!fileData.name || !fileData.name.trim()) {
           if (fileData.filePath) {
@@ -1031,8 +890,7 @@ export default {
           // 更新筛选器数据
           this.updateFilterData()
           
-          // 重置表单
-          this.resetNewFileForm()
+          // 关闭对话框
           this.closeAddFileDialog()
           
           // 成功时使用 toast 通知
@@ -1044,15 +902,12 @@ export default {
       }
     },
 
-    async addFolder(folderData?: any) {
-      // 如果没有传入 folderData，使用 newFolder
-      const data = folderData || this.newFolder
-      
-      if (!data.name || !data.name.trim()) {
+    async handleAddFolderConfirm(folderData) {
+      if (!folderData.name || !folderData.name.trim()) {
         notify.toast('error', '添加失败', '请填写文件夹名称')
         return
       }
-      if (!data.folderPath || !data.folderPath.trim()) {
+      if (!folderData.folderPath || !folderData.folderPath.trim()) {
         notify.toast('error', '添加失败', '请先选择文件夹路径')
         return
       }
@@ -1060,10 +915,10 @@ export default {
       try {
         const folder = {
           id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-          name: data.name.trim(),
-          description: data.description || '',
-          tags: Array.isArray(data.tags) ? data.tags : [],
-          folderPath: data.folderPath.trim(),
+          name: folderData.name.trim(),
+          description: folderData.description || '',
+          tags: Array.isArray(folderData.tags) ? folderData.tags : [],
+          folderPath: folderData.folderPath.trim(),
           addedDate: new Date().toISOString()
         }
 
@@ -1071,13 +926,14 @@ export default {
         if ((this as any).addFolder && typeof (this as any).addFolder === 'function') {
           const success = await (this as any).addFolder(folder)
           if (success) {
+            // 重新加载文件夹列表
+            await this.loadFolders()
+            
             // 更新筛选器数据
             this.updateFilterData()
             
-            // 如果是通过对话框添加的，关闭对话框
-            if (!folderData) {
-              this.closeAddFolderDialog()
-            }
+            // 关闭对话框
+            this.closeAddFolderDialog()
             
             // 成功时使用 toast 通知
             notify.toast('success', '添加成功', `文件夹 "${folder.name}" 已成功添加`)
@@ -1375,7 +1231,6 @@ export default {
         tags: Array.isArray(file.tags) ? [...file.tags] : [],
         filePath: file.filePath || ''
       }
-      this.editTagsInput = ''
       // 先设置数据，再显示对话框，确保数据已准备好
       this.$nextTick(() => {
         this.showEditDialog = true
@@ -1383,16 +1238,7 @@ export default {
     },
     closeEditDialog() {
       this.showEditDialog = false
-    },
-    addEditTag() {
-      const tag = this.editTagsInput.trim()
-      if (tag && !this.editFileForm.tags.includes(tag)) {
-        this.editFileForm.tags.push(tag)
-        this.editTagsInput = ''
-      }
-    },
-    removeEditTag(index) {
-      this.editFileForm.tags.splice(index, 1)
+      this.editFileForm = null
     },
     async browseEditFile() {
       try {
@@ -1403,7 +1249,7 @@ export default {
         } else if (window.electronAPI && window.electronAPI.selectVideoFile) {
           filePath = await window.electronAPI.selectVideoFile()
         }
-        if (filePath) {
+        if (filePath && this.editFileForm) {
           this.editFileForm.filePath = filePath
         }
       } catch (e) {
@@ -1459,32 +1305,30 @@ export default {
          notify.toast('error', '缩略图生成失败', `生成过程中发生错误: ${e.message}`)
        }
      },
-    async saveEditedFile() {
+    async handleEditFileConfirm(updatedFile) {
       try {
-        const fileData = { ...this.editFileForm }
-        
-        if (!fileData.name || !fileData.name.trim()) {
+        if (!updatedFile.name || !updatedFile.name.trim()) {
           notify.toast('error', '保存失败', '请填写文件名称')
           return
         }
         
         const payload = {
-          name: (fileData.name || '').trim(),
-          description: (fileData.description || '').trim(),
-          tags: Array.isArray(fileData.tags) ? fileData.tags : [],
-          filePath: (fileData.filePath || '').trim()
+          name: (updatedFile.name || '').trim(),
+          description: (updatedFile.description || '').trim(),
+          tags: Array.isArray(updatedFile.tags) ? updatedFile.tags : [],
+          filePath: (updatedFile.filePath || '').trim()
         }
         
         // 使用文件管理器的 updateFile 方法
         if (this.fileManager) {
-          await this.fileManager.updateFile(this.editFileForm.id, payload)
+          await this.fileManager.updateFile(updatedFile.id, payload)
           await this.fileManager.loadFiles()
           this.files = this.fileManager.files
           
           // 更新筛选器数据
           this.updateFilterData()
           
-          this.showEditDialog = false
+          this.closeEditDialog()
           notify.toast('success', '保存成功', '文件信息已更新')
         }
       } catch (e) {
@@ -1604,45 +1448,21 @@ export default {
         name: folder.name || '',
         description: folder.description || '',
         tags: Array.isArray(folder.tags) ? [...folder.tags] : [],
-        actors: Array.isArray(folder.actors) ? [...folder.actors] : [],
-        series: folder.series || '',
-        folderPath: folder.folderPath || '',
-        thumbnail: folder.thumbnail || ''
+        folderPath: folder.folderPath || ''
       }
-      this.editFolderActorsInput = (this.editFolderForm.actors || []).join(', ')
-      this.editFolderTagsInput = ''
       this.showEditFolderDialog = true
     },
 
     closeEditFolderDialog() {
       this.showEditFolderDialog = false
-    },
-
-    parseEditFolderActors() {
-      if (this.editFolderActorsInput && this.editFolderActorsInput.trim()) {
-        this.editFolderForm.actors = this.editFolderActorsInput.split(',').map(s => s.trim()).filter(Boolean)
-      } else {
-        this.editFolderForm.actors = []
-      }
-    },
-
-    addEditFolderTag() {
-      const tag = this.editFolderTagsInput.trim()
-      if (tag && !this.editFolderForm.tags.includes(tag)) {
-        this.editFolderForm.tags.push(tag)
-        this.editFolderTagsInput = ''
-      }
-    },
-
-    removeEditFolderTag(index) {
-      this.editFolderForm.tags.splice(index, 1)
+      this.editFolderForm = null
     },
 
     async selectEditFolderPath() {
       try {
         if (window.electronAPI && window.electronAPI.selectFolder) {
           const result = await window.electronAPI.selectFolder()
-          if (result && result.success && result.path) {
+          if (result && result.success && result.path && this.editFolderForm) {
             this.editFolderForm.folderPath = result.path
           }
         }
@@ -1788,27 +1608,21 @@ export default {
       }
     },
 
-    async saveEditedFolder(folderData?: any) {
+    async handleEditFolderConfirm(updatedFolder) {
       try {
-        // 如果没有传入 folderData，使用 editFolderForm
-        const data = folderData || this.editFolderForm
-        this.parseEditFolderActors()
         const payload = {
-          name: (data.name || '').trim(),
-          description: (data.description || '').trim(),
-          tags: data.tags || this.editFolderForm.tags,
-          actors: data.actors || this.editFolderForm.actors,
-          series: (data.series || '').trim(),
-          folderPath: (data.folderPath || '').trim(),
-          thumbnail: (data.thumbnail || '').trim()
+          name: (updatedFolder.name || '').trim(),
+          description: (updatedFolder.description || '').trim(),
+          tags: updatedFolder.tags || [],
+          folderPath: (updatedFolder.folderPath || '').trim()
         }
         // 使用 composable 的 updateFolder 方法
-        await this.updateFolder(this.editFolderForm.id, payload)
+        await this.updateFolder(updatedFolder.id, payload)
         
         // 更新筛选器数据
         this.updateFilterData()
         
-        this.showEditFolderDialog = false
+        this.closeEditFolderDialog()
         notify.toast('success', '保存成功', `文件夹 "${payload.name}" 已更新`)
       } catch (e) {
         console.error('保存编辑文件夹失败:', e)

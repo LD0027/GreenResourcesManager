@@ -1,6 +1,7 @@
 <template>
   <div v-if="visible" class="modal-overlay" @mousedown="handleOverlayMouseDown">
-    <div class="modal-content" @mousedown.stop>
+    <div class="modal-wrapper">
+      <div class="modal-content" @mousedown.stop>
       <div class="modal-header">
         <h3>{{ getTitle() }}</h3>
         <button class="btn-close" @click="handleClose">✕</button>
@@ -32,6 +33,8 @@
           v-model:tagInput="localTagInput"
           @add-tag="handleAddTag"
           @remove-tag="handleRemoveTag"
+          @tag-input-focus="handleTagInputFocus"
+          @tag-input-blur="handleTagInputBlur"
         />
         <!-- 添加模式：选择添加类型（文件夹或单个图片） -->
         <div v-if="mode === 'add' && allowSingleImage && !singleImageOnly" class="add-type-selector">
@@ -88,6 +91,22 @@
         >
           {{ mode === 'add' ? '添加' : '保存修改' }}
         </button>
+      </div>
+      </div>
+      <!-- Tag 选择面板 -->
+      <div 
+        v-if="showTagPanel" 
+        class="tag-panel" 
+        @mousedown.stop
+        @mouseenter="handleTagPanelMouseEnter"
+        @mouseleave="handleTagPanelMouseLeave"
+      >
+        <div class="tag-panel-header">
+          <h4>Tag选择面板</h4>
+        </div>
+        <div class="tag-panel-body">
+          <!-- 面板内容将在后续实现 -->
+        </div>
       </div>
     </div>
   </div>
@@ -168,6 +187,9 @@ export default {
   setup(props, { emit }) {
     const localTagInput = ref(props.tagInput)
     const addType = ref<'folder' | 'single'>(props.singleImageOnly ? 'single' : 'folder')
+    const showTagPanel = ref(false)
+    let tagPanelBlurTimer: ReturnType<typeof setTimeout> | null = null
+    const isTagPanelHovered = ref(false)
 
     // 监听 visible 变化
     watch(() => props.visible, () => {
@@ -255,9 +277,47 @@ export default {
       }
     }
 
+    const handleTagInputFocus = () => {
+      // 清除可能存在的延迟隐藏定时器
+      if (tagPanelBlurTimer) {
+        clearTimeout(tagPanelBlurTimer)
+        tagPanelBlurTimer = null
+      }
+      // 显示面板
+      showTagPanel.value = true
+    }
+
+    const handleTagInputBlur = () => {
+      // 延迟隐藏面板，以便用户可以点击面板内容
+      // 如果鼠标在面板上，则不隐藏
+      tagPanelBlurTimer = setTimeout(() => {
+        if (!isTagPanelHovered.value) {
+          showTagPanel.value = false
+        }
+      }, 200)
+    }
+
+    const handleTagPanelMouseEnter = () => {
+      isTagPanelHovered.value = true
+      // 清除隐藏定时器
+      if (tagPanelBlurTimer) {
+        clearTimeout(tagPanelBlurTimer)
+        tagPanelBlurTimer = null
+      }
+    }
+
+    const handleTagPanelMouseLeave = () => {
+      isTagPanelHovered.value = false
+      // 延迟隐藏面板
+      tagPanelBlurTimer = setTimeout(() => {
+        showTagPanel.value = false
+      }, 200)
+    }
+
     return {
       localTagInput,
       addType,
+      showTagPanel,
       canSubmit,
       handleClose,
       handleOverlayMouseDown,
@@ -270,7 +330,11 @@ export default {
       handleSelectFromFolder,
       handleBrowseImage,
       handleClearCover,
-      getTitle
+      getTitle,
+      handleTagInputFocus,
+      handleTagInputBlur,
+      handleTagPanelMouseEnter,
+      handleTagPanelMouseLeave
     }
   }
 }
@@ -290,6 +354,13 @@ export default {
   z-index: 3000; /* 高于 DetailPanel 的 z-index: 2000 */
 }
 
+.modal-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  position: relative;
+}
+
 .modal-content {
   background: var(--bg-primary, #fff);
   border-radius: 12px;
@@ -299,6 +370,7 @@ export default {
   display: flex;
   flex-direction: column;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 .modal-header {
@@ -401,6 +473,66 @@ export default {
 .add-type-option span {
   color: var(--text-primary, #333);
   font-size: 14px;
+}
+
+/* Tag 选择面板样式 */
+.tag-panel {
+  background: var(--bg-primary, #fff);
+  border-radius: 12px;
+  width: 300px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.tag-panel-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.tag-panel-header h4 {
+  color: var(--text-primary, #333);
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.tag-panel-body {
+  padding: 20px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .modal-wrapper {
+    flex-direction: column;
+    width: 95vw;
+    max-width: 95vw;
+  }
+
+  .modal-content {
+    width: 100%;
+    margin: 20px;
+  }
+
+  .tag-panel {
+    width: 100%;
+    margin: 0 20px 20px 20px;
+  }
 }
 </style>
 

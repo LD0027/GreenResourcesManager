@@ -46,65 +46,17 @@
     </div>
 
     <!-- 添加音频对话框 -->
-    <div v-if="showAddDialog" class="modal-overlay" @click="closeAddDialog">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>添加音频文件</h3>
-          <button class="btn-close" @click="closeAddDialog">×</button>
-        </div>
-        
-        <div class="modal-body">
-          <FormField
-            label="音频文件"
-            type="file"
-            v-model="newAudio.filePath"
-            placeholder="选择音频文件..."
-            @browse="selectAudioFile"
-          />
-          
-          <FormField
-            label="音频名称"
-            type="text"
-            v-model="newAudio.name"
-            placeholder="音频名称（可选，将自动从文件名获取）"
-          />
-          
-          <FormField
-            label="艺术家"
-            type="text"
-            v-model="newAudio.artist"
-            placeholder="艺术家"
-          />
-          
-          <FormField
-            label="演员（用逗号分隔）"
-            type="text"
-            v-model="newAudio.actorsInput"
-            placeholder="例如: 张三, 李四, 王五"
-          />
-          
-          <FormField
-            label="标签（用逗号分隔）"
-            type="text"
-            v-model="newAudio.tagsInput"
-            placeholder="例如: 流行, 经典, 摇滚"
-          />
-          
-          <FormField
-            label="备注"
-            type="textarea"
-            v-model="newAudio.notes"
-            placeholder="音频备注..."
-            :rows="3"
-          />
-        </div>
-        
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="closeAddDialog">取消</button>
-          <button class="btn-confirm" @click="addAudio">添加</button>
-        </div>
-      </div>
-    </div>
+    <AddAudioDialog
+      ref="addAudioDialog"
+      :visible="showAddDialog"
+      :is-electron-environment="true"
+      :initial-file-path="newAudioFilePath"
+      :initial-name="newAudioName"
+      :initial-duration="newAudioDuration"
+      @close="closeAddDialog"
+      @confirm="handleAddAudioConfirm"
+      @browse-audio-file="selectAudioFile"
+    />
 
     <!-- 音频详情对话框 -->
     <DetailPanel
@@ -119,82 +71,16 @@
     />
 
     <!-- 编辑音频对话框 -->
-    <div v-if="showEditDialog" class="modal-overlay" @click="closeEditDialog">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>编辑音频信息</h3>
-          <button class="btn-close" @click="closeEditDialog">×</button>
-        </div>
-        
-        <div class="modal-body">
-          <FormField
-            label="音频文件"
-            type="file"
-            v-model="editAudioForm.filePath"
-            placeholder="选择音频文件..."
-            @browse="selectEditAudioFile"
-          />
-          
-          <FormField
-            label="音频名称"
-            type="text"
-            v-model="editAudioForm.name"
-            placeholder="音频名称"
-          />
-          
-          <FormField
-            label="艺术家"
-            type="text"
-            v-model="editAudioForm.artist"
-            placeholder="艺术家"
-          />
-          
-          <FormField
-            label="演员"
-            type="tags"
-            v-model="editAudioForm.actors"
-            v-model:tagInput="editActorInput"
-            @add-tag="addEditActor"
-            @remove-tag="removeEditActor"
-            tagPlaceholder="输入演员名称，按回车或逗号添加"
-          />
-          
-          <FormField
-            label="标签"
-            type="tags"
-            v-model="editAudioForm.tags"
-            v-model:tagInput="editTagInput"
-            @add-tag="addEditTag"
-            @remove-tag="removeEditTag"
-            tagPlaceholder="输入标签，按回车或逗号添加"
-          />
-          
-          <FormField
-            label="缩略图"
-            type="file"
-            v-model="editAudioForm.thumbnailPath"
-            placeholder="选择缩略图文件..."
-            @browse="selectEditThumbnailFile"
-          />
-          <div v-if="editAudioForm.thumbnailPath" class="thumbnail-preview">
-            <img :src="getThumbnailUrl(editAudioForm.thumbnailPath)" alt="缩略图预览" class="preview-image">
-          </div>
-          
-          <FormField
-            label="备注"
-            type="textarea"
-            v-model="editAudioForm.notes"
-            placeholder="音频备注..."
-            :rows="3"
-          />
-        </div>
-        
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="closeEditDialog">取消</button>
-          <button class="btn-confirm" @click="saveEditedAudio">保存</button>
-        </div>
-      </div>
-    </div>
+    <EditAudioDialog
+      :visible="showEditDialog"
+      :audio="editAudioForm"
+      :is-electron-environment="true"
+      :get-thumbnail-url="getThumbnailUrl"
+      @close="closeEditDialog"
+      @confirm="handleEditAudioConfirm"
+      @browse-audio-file="selectEditAudioFile"
+      @browse-thumbnail-file="selectEditThumbnailFile"
+    />
 
 
     <!-- 路径更新确认对话框 -->
@@ -222,6 +108,8 @@ import FormField from '../../components/FormField.vue'
 import AudioGrid from '../../components/audio/AudioGrid.vue'
 import DetailPanel from '../../components/DetailPanel.vue'
 import PathUpdateDialog from '../../components/PathUpdateDialog.vue'
+import AddAudioDialog from '../../components/audio/AddAudioDialog.vue'
+import EditAudioDialog from '../../components/audio/EditAudioDialog.vue'
 
 import saveManager from '../../utils/SaveManager.ts'
 import notify from '../../utils/NotificationService.ts'
@@ -244,6 +132,8 @@ export default {
     AudioGrid,
     DetailPanel,
     PathUpdateDialog,
+    AddAudioDialog,
+    EditAudioDialog
   },
   emits: ['filter-data-updated'],
   setup() {
@@ -343,28 +233,13 @@ export default {
       audioPageSize: 20, // 默认每页显示20个音频
       totalAudioPages: 0,
       selectedAudio: null,
-      newAudio: {
-        name: '',
-        artist: '',
-        filePath: '',
-        actorsInput: '',
-        tagsInput: '',
-        notes: ''
-      },
+      // 添加对话框相关状态
+      newAudioFilePath: '',
+      newAudioName: '',
+      newAudioDuration: 0,
       // 编辑相关状态
       showEditDialog: false,
-      editAudioForm: {
-        id: '',
-        name: '',
-        artist: '',
-        filePath: '',
-        thumbnailPath: '',
-        actors: [],
-        tags: [],
-        notes: ''
-      },
-      editActorInput: '',
-      editTagInput: '',
+      editAudioForm: null,
       // 排序选项
       audioSortOptions: [
         { value: 'name', label: '按名称' },
@@ -524,11 +399,10 @@ export default {
         if (window.electronAPI && window.electronAPI.selectAudioFile) {
           const filePath = await window.electronAPI.selectAudioFile()
           if (filePath) {
-            this.newAudio.filePath = filePath
-            // 自动提取文件名
-            this.newAudio.name = this.extractNameFromPath(filePath)
+            this.newAudioFilePath = filePath
+            this.newAudioName = this.extractNameFromPath(filePath)
             // 自动获取音频时长
-            this.newAudio.duration = await this.getAudioDuration(filePath)
+            this.newAudioDuration = await this.getAudioDuration(filePath)
           }
         } else {
           notify.toast('error', '选择失败', '当前环境不支持文件选择功能')
@@ -539,17 +413,11 @@ export default {
       }
     },
     
-    async addAudio() {
+    async handleAddAudioConfirm(audioData) {
       try {
-        if (!this.newAudio.filePath) {
+        if (!audioData.filePath) {
           notify.toast('error', '添加失败', '请选择音频文件')
           return
-        }
-        
-        const audioData = {
-          ...this.newAudio,
-          actors: this.newAudio.actorsInput ? this.newAudio.actorsInput.split(',').map(actor => actor.trim()).filter(actor => actor) : [],
-          tags: this.newAudio.tagsInput ? this.newAudio.tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag) : []
         }
         
         const audio = await this.addAudioToManager(audioData)
@@ -620,14 +488,9 @@ export default {
     
     closeAddDialog() {
       this.showAddDialog = false
-      this.newAudio = {
-        name: '',
-        artist: '',
-        filePath: '',
-        actorsInput: '',
-        tagsInput: '',
-        notes: ''
-      }
+      this.newAudioFilePath = ''
+      this.newAudioName = ''
+      this.newAudioDuration = 0
     },
     
     /**
@@ -703,44 +566,7 @@ export default {
     
     closeEditDialog() {
       this.showEditDialog = false
-      this.editAudioForm = {
-        id: '',
-        name: '',
-        artist: '',
-        filePath: '',
-        thumbnailPath: '',
-        actors: [],
-        tags: [],
-        notes: ''
-      }
-      this.editActorInput = ''
-      this.editTagInput = ''
-    },
-    
-    // 演员管理
-    addEditActor() {
-      const actor = this.editActorInput.trim()
-      if (actor && !this.editAudioForm.actors.includes(actor)) {
-        this.editAudioForm.actors.push(actor)
-        this.editActorInput = ''
-      }
-    },
-    
-    removeEditActor(index) {
-      this.editAudioForm.actors.splice(index, 1)
-    },
-    
-    // 标签管理
-    addEditTag() {
-      const tag = this.editTagInput.trim()
-      if (tag && !this.editAudioForm.tags.includes(tag)) {
-        this.editAudioForm.tags.push(tag)
-        this.editTagInput = ''
-      }
-    },
-    
-    removeEditTag(index) {
-      this.editAudioForm.tags.splice(index, 1)
+      this.editAudioForm = null
     },
     
     // 文件选择
@@ -792,42 +618,33 @@ export default {
     },
     
     // 保存编辑
-    async saveEditedAudio() {
+    async handleEditAudioConfirm(updatedAudio) {
       try {
-        if (!this.editAudioForm.name.trim()) {
+        if (!updatedAudio.name.trim()) {
           await alertService.warning('请输入音频名称', '提示')
           return
         }
         
-        if (!this.editAudioForm.filePath.trim()) {
-          await alertService.warning('请选择音频文件', '提示')
-          return
-        }
+        await this.updateAudioInManager(updatedAudio.id, {
+          name: updatedAudio.name.trim(),
+          artist: updatedAudio.artist.trim(),
+          filePath: updatedAudio.filePath.trim(),
+          thumbnailPath: updatedAudio.thumbnailPath.trim(),
+          actors: updatedAudio.actors,
+          tags: updatedAudio.tags,
+          notes: updatedAudio.notes.trim()
+        })
         
-        const audioData = {
-          name: this.editAudioForm.name.trim(),
-          artist: this.editAudioForm.artist.trim(),
-          filePath: this.editAudioForm.filePath,
-          thumbnailPath: this.editAudioForm.thumbnailPath,
-          actors: this.editAudioForm.actors,
-          tags: this.editAudioForm.tags,
-          notes: this.editAudioForm.notes.trim()
-        }
-        
-        await this.updateAudioInManager(this.editAudioForm.id, audioData)
-        
-        // 重新加载音频列表
+        // 重新加载音频列表，确保数据同步
         await this.loadAudios()
-        
-        // 关闭编辑对话框
         this.closeEditDialog()
-        
-        notify.native('音频更新成功', `已更新音频: ${audioData.name}`)
+        notify.native('保存成功', '音频信息已更新')
       } catch (error) {
-        console.error('更新音频失败:', error)
-        await alertService.error('更新音频失败: ' + error.message, '错误')
+        console.error('保存编辑失败:', error)
+        notify.toast('error', '保存失败', '保存编辑失败: ' + error.message)
       }
     },
+    
     async handleToggleFavorite(audio) {
       // 检查 audio 是否存在，避免在面板关闭时触发更新
       if (!audio || !audio.id) {

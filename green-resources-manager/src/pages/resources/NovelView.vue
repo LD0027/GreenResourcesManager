@@ -89,123 +89,23 @@
     </div>
 
     <!-- 添加小说对话框 -->
-    <div v-if="showAddDialog" class="modal-overlay" @click="closeAddNovelDialog">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>添加小说</h3>
-          <button class="btn-close" @click="closeAddNovelDialog">✕</button>
-        </div>
-        <div class="modal-body">
-          <FormField
-            label="小说名称 (可选)"
-            type="text"
-            v-model="newNovel.name"
-            placeholder="留空将自动从文件名提取"
-          />
-          <FormField
-            label="作者 (可选)"
-            type="text"
-            v-model="newNovel.author"
-            placeholder="输入作者名称"
-          />
-          <FormField
-            label="类型 (可选)"
-            type="text"
-            v-model="newNovel.genre"
-            placeholder="如：玄幻、都市、历史等"
-          />
-          <FormField
-            label="小说简介 (可选)"
-            type="textarea"
-            v-model="newNovel.description"
-            placeholder="输入小说简介或描述..."
-            :rows="3"
-          />
-          <FormField
-            label="小说标签 (可选)"
-            type="tags"
-            v-model="newNovel.tags"
-            v-model:tagInput="tagInput"
-            @add-tag="addTag"
-            @remove-tag="removeTag"
-          />
-          <FormField
-            label="小说文件"
-            type="file"
-            v-model="newNovel.filePath"
-            placeholder="选择小说文本文件"
-            @browse="browseForNovelFile"
-          />
-          <div class="file-hint">支持 .txt, .epub, .mobi, .pdf 等格式</div>
-          <FormField
-            label="封面图片 (可选)"
-            type="file"
-            v-model="newNovel.coverImage"
-            placeholder="选择封面图片"
-            @browse="browseForCoverImage"
-          />
-        </div>
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="closeAddNovelDialog">取消</button>
-          <button class="btn-confirm" @click="addNovel" :disabled="!canAddNovel">添加小说</button>
-        </div>
-      </div>
-    </div>
+    <AddNovelDialog
+      ref="addNovelDialog"
+      :visible="showAddDialog"
+      :is-electron-environment="true"
+      @close="closeAddNovelDialog"
+      @confirm="handleAddNovelConfirm"
+      @browse-novel-file="browseForNovelFile"
+      @browse-cover-image="browseForCoverImage"
+    />
 
     <!-- 编辑小说对话框 -->
-    <div v-if="showEditDialog" class="modal-overlay" @click="closeEditNovelDialog">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>编辑小说</h3>
-          <button class="btn-close" @click="closeEditNovelDialog">✕</button>
-        </div>
-        <div class="modal-body">
-          <FormField
-            label="小说名称"
-            type="text"
-            v-model="editNovelForm.name"
-            placeholder="输入小说名称"
-          />
-          <FormField
-            label="作者"
-            type="text"
-            v-model="editNovelForm.author"
-            placeholder="输入作者名称"
-          />
-          <FormField
-            label="类型"
-            type="text"
-            v-model="editNovelForm.genre"
-            placeholder="如：玄幻、都市、历史等"
-          />
-          <FormField
-            label="小说简介"
-            type="textarea"
-            v-model="editNovelForm.description"
-            placeholder="输入小说简介或描述..."
-            :rows="3"
-          />
-          <FormField
-            label="小说标签"
-            type="tags"
-            v-model="editNovelForm.tags"
-            v-model:tagInput="editTagInput"
-            @add-tag="addEditTag"
-            @remove-tag="removeEditTag"
-          />
-          <FormField
-            label="阅读进度 (%)"
-            type="number"
-            v-model="editNovelForm.readProgress"
-            placeholder="0-100"
-          />
-        </div>
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="closeEditNovelDialog">取消</button>
-          <button class="btn-confirm" @click="saveEditedNovel">保存修改</button>
-        </div>
-      </div>
-    </div>
+    <EditNovelDialog
+      :visible="showEditDialog"
+      :novel="editNovelForm"
+      @close="closeEditNovelDialog"
+      @confirm="handleEditNovelConfirm"
+    />
 
     <!-- 小说详情页面 -->
     <DetailPanel
@@ -289,6 +189,8 @@ import PdfReader from '../../components/PdfReader.vue'
 import TextReader from '../../components/TextReader.vue'
 import EbookReader from '../../components/epub-reader-v2/EbookReader.vue'
 import ContentView from '../../components/epub-reader-v2/ContentView.vue'
+import AddNovelDialog from '../../components/novel/AddNovelDialog.vue'
+import EditNovelDialog from '../../components/novel/EditNovelDialog.vue'
 import saveManager from '../../utils/SaveManager.ts'
 import { useNovelManagement } from '../../composables/novel/useNovelManagement'
 import { useNovelFilter } from '../../composables/novel/useNovelFilter'
@@ -313,7 +215,9 @@ export default {
     PdfReader,
     TextReader,
     EbookReader,
-    ContentView
+    ContentView,
+    AddNovelDialog,
+    EditNovelDialog
   },
   emits: ['filter-data-updated'],
   props: {
@@ -727,32 +631,36 @@ export default {
         console.error('分析文件失败:', error)
       }
     },
-    async addNovel() {
-      if (!this.canAddNovel) return
-      
+    async handleAddNovelConfirm(novelData) {
       try {
-        let novelName = this.newNovel.name.trim()
-        if (!novelName) {
-          novelName = this.extractNovelNameFromPath(this.newNovel.filePath)
+        if (!novelData.filePath || !novelData.filePath.trim()) {
+          notify.toast('error', '添加失败', '请选择小说文件')
+          return
         }
         
-        const fileType = this.getFileType(this.newNovel.filePath)
+        let novelName = novelData.name.trim()
+        if (!novelName) {
+          novelName = this.extractNovelNameFromPath(novelData.filePath)
+        }
         
-        const novelData = {
+        const fileType = this.getFileType(novelData.filePath)
+        
+        const finalNovelData = {
           name: novelName,
-          author: this.newNovel.author.trim() || '未知作者',
-          genre: this.newNovel.genre.trim() || '',
-          description: this.newNovel.description.trim() || '',
-          tags: [...this.newNovel.tags],
-          filePath: this.newNovel.filePath.trim(),
+          author: novelData.author.trim() || '未知作者',
+          genre: novelData.genre.trim() || '',
+          description: novelData.description.trim() || '',
+          tags: [...novelData.tags],
+          filePath: novelData.filePath.trim(),
           fileType: fileType,
-          coverImage: this.newNovel.coverImage.trim(),
+          coverImage: novelData.coverImage.trim(),
           readProgress: 0,
           readTime: 0,
           addedDate: new Date().toISOString()
         }
         
-        const novel = await this.addNovelToManager(novelData)
+        const novel = await this.addNovelToManager(finalNovelData)
+        await this.loadNovels()
         this.closeAddNovelDialog()
         notify.native('添加成功', `小说 "${novel?.name || '未知'}" 已添加`)
       } catch (error) {
@@ -845,34 +753,25 @@ export default {
         tags: Array.isArray(novel.tags) ? [...novel.tags] : [],
         readProgress: novel.readProgress || 0
       }
-      this.editTagInput = ''
       this.showEditDialog = true
     },
     closeEditNovelDialog() {
       this.showEditDialog = false
+      this.editNovelForm = null
     },
-    addEditTag() {
-      const tag = this.editTagInput.trim()
-      if (tag && !this.editNovelForm.tags.includes(tag)) {
-        this.editNovelForm.tags.push(tag)
-        this.editTagInput = ''
-      }
-    },
-    removeEditTag(index) {
-      this.editNovelForm.tags.splice(index, 1)
-    },
-    async saveEditedNovel() {
+    async handleEditNovelConfirm(updatedNovel) {
       try {
         const updateData = {
-          name: this.editNovelForm.name.trim(),
-          author: this.editNovelForm.author.trim(),
-          genre: this.editNovelForm.genre.trim(),
-          description: this.editNovelForm.description.trim(),
-          tags: [...this.editNovelForm.tags],
-          readProgress: Math.max(0, Math.min(100, this.editNovelForm.readProgress))
+          name: updatedNovel.name.trim(),
+          author: updatedNovel.author.trim(),
+          genre: updatedNovel.genre.trim(),
+          description: updatedNovel.description.trim(),
+          tags: [...updatedNovel.tags],
+          readProgress: Math.max(0, Math.min(100, updatedNovel.readProgress))
         }
         
-        await this.updateNovelInManager(this.editNovelForm.id, updateData)
+        await this.updateNovelInManager(updatedNovel.id, updateData)
+        await this.loadNovels()
         notify.native('保存成功', '小说信息已更新')
         this.closeEditNovelDialog()
       } catch (error: any) {

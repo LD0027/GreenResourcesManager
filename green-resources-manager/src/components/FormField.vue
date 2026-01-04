@@ -98,6 +98,8 @@
         type="text"
         :value="tagInput"
         @input="$emit('update:tagInput', $event.target.value)"
+        @focus="$emit('tagInputFocus')"
+        @blur="$emit('tagInputBlur')"
         @keydown.enter.prevent="$emit('addTag')"
         @keydown.comma.prevent="$emit('addTag')"
         :placeholder="tagPlaceholder"
@@ -163,7 +165,9 @@ export default {
     'addTag',
     'removeTag',
     'browse',
-    'change'
+    'change',
+    'tagInputFocus',
+    'tagInputBlur'
   ],
   computed: {
     availableOptions() {

@@ -54,44 +54,11 @@
     </div>
 
     <!-- 添加网站对话框 -->
-    <div v-if="showAddDialog" class="modal-overlay" @click="closeAddDialog">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>添加网站收藏</h3>
-          <button class="btn-close" @click="closeAddDialog">×</button>
-        </div>
-        
-        <div class="modal-body">
-          <FormField
-            label="网站名称"
-            type="text"
-            v-model="newWebsite.name"
-            placeholder="网站名称（可选）"
-          />
-          
-          <FormField
-            label="网站URL *"
-            type="text"
-            v-model="newWebsite.url"
-            placeholder="https://example.com"
-          />
-          <div v-if="urlError" class="error-message">{{ urlError }}</div>
-          
-          <FormField
-            label="网站描述"
-            type="textarea"
-            v-model="newWebsite.description"
-            placeholder="网站描述（可选）..."
-            :rows="3"
-          />
-        </div>
-        
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="closeAddDialog">取消</button>
-          <button class="btn-confirm" @click="addWebsite" :disabled="!isFormValid">添加</button>
-        </div>
-      </div>
-    </div>
+    <AddWebsiteDialog
+      :visible="showAddDialog"
+      @close="closeAddDialog"
+      @confirm="handleAddWebsiteConfirm"
+    />
 
     <!-- 网站详情对话框 -->
     <DetailPanel
@@ -106,73 +73,12 @@
     />
 
     <!-- 编辑网站对话框 -->
-    <div v-if="showEditDialog" class="modal-overlay" @click="closeEditDialog">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>编辑网站信息</h3>
-          <button class="btn-close" @click="closeEditDialog">×</button>
-        </div>
-        
-        <div class="modal-body">
-          <FormField
-            label="网站名称"
-            type="text"
-            v-model="editWebsiteData.name"
-            placeholder="网站名称"
-          />
-          
-          <FormField
-            label="网站URL *"
-            type="text"
-            v-model="editWebsiteData.url"
-            placeholder="https://example.com"
-          />
-          <div v-if="editUrlError" class="error-message">{{ editUrlError }}</div>
-          
-          <FormField
-            label="网站描述"
-            type="textarea"
-            v-model="editWebsiteData.description"
-            placeholder="网站描述..."
-            :rows="3"
-          />
-          
-          <FormField
-            label="网站标签"
-            type="tags"
-            v-model="editWebsiteData.tags"
-            v-model:tagInput="editTagInput"
-            @add-tag="addEditTag"
-            @remove-tag="removeEditTag"
-            tag-placeholder="输入标签后按回车或逗号添加"
-          />
-          
-          <div class="form-checkboxes">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="editWebsiteData.isBookmark">
-              <span class="checkbox-text">设为书签</span>
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="editWebsiteData.isPrivate">
-              <span class="checkbox-text">设为私有</span>
-            </label>
-          </div>
-          
-          <FormField
-            label="备注"
-            type="textarea"
-            v-model="editWebsiteData.notes"
-            placeholder="添加备注信息..."
-            :rows="3"
-          />
-        </div>
-        
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="closeEditDialog">取消</button>
-          <button class="btn-confirm" @click="saveWebsiteEdit" :disabled="!isEditFormValid">保存</button>
-        </div>
-      </div>
-    </div>
+    <EditWebsiteDialog
+      :visible="showEditDialog"
+      :website="editWebsiteData"
+      @close="closeEditDialog"
+      @confirm="handleEditWebsiteConfirm"
+    />
 
   </BaseView>
 </template>
@@ -180,6 +86,8 @@
 <script lang="ts">
 import BaseView from '../../components/BaseView.vue'
 import FormField from '../../components/FormField.vue'
+import AddWebsiteDialog from '../../components/website/AddWebsiteDialog.vue'
+import EditWebsiteDialog from '../../components/website/EditWebsiteDialog.vue'
 import MediaCard from '../../components/MediaCard.vue'
 import DetailPanel from '../../components/DetailPanel.vue'
 
@@ -201,7 +109,9 @@ export default {
     BaseView,
     FormField,
     MediaCard,
-    DetailPanel
+    DetailPanel,
+    AddWebsiteDialog,
+    EditWebsiteDialog
   },
   props: {
     pageConfig: {
@@ -353,16 +263,6 @@ export default {
         itemType: '网站'
       }
     },
-    isFormValid() {
-      return this.newWebsite.url.trim() && 
-             this.websiteManager.validateUrl(this.newWebsite.url) &&
-             !this.urlError
-    },
-    isEditFormValid() {
-      return this.editWebsiteData.url.trim() && 
-             this.websiteManager.validateUrl(this.editWebsiteData.url) &&
-             !this.editUrlError
-    },
     websiteStats() {
       if (!this.selectedWebsite) return []
       
@@ -460,22 +360,22 @@ export default {
       this.$emit('filter-data-updated', filterData)
     },
     
-    async addWebsite() {
+    async handleAddWebsiteConfirm(websiteData) {
       try {
-        if (!this.isFormValid) {
+        if (!websiteData.url || !websiteData.url.trim()) {
           alertService.warning('请填写有效的URL')
           return
         }
         
-        const websiteData = {
-          ...this.newWebsite,
+        const finalWebsiteData = {
+          ...websiteData,
           // 如果没有填写名称，从URL中提取域名作为名称
-          name: this.newWebsite.name.trim() || this.websiteManager.getDomain(this.newWebsite.url),
+          name: websiteData.name.trim() || this.websiteManager.getDomain(websiteData.url),
           tags: [],
-          favicon: await this.websiteManager.getBestFaviconUrl(this.newWebsite.url)
+          favicon: await this.websiteManager.getBestFaviconUrl(websiteData.url)
         }
         
-        const website = await this.addWebsiteToManager(websiteData)
+        const website = await this.addWebsiteToManager(finalWebsiteData)
         // 重新加载网站列表以确保数据同步
         await this.loadWebsites()
         this.closeAddDialog()
@@ -586,12 +486,6 @@ export default {
     
     closeAddDialog() {
       this.showAddDialog = false
-      this.newWebsite = {
-        name: '',
-        url: '',
-        description: ''
-      }
-      this.urlError = ''
     },
     
     /**
@@ -692,70 +586,43 @@ export default {
         description: originalWebsite.description || '',
         tags: [...(originalWebsite.tags || [])],
         isBookmark: originalWebsite.isBookmark || false,
-        isPrivate: originalWebsite.isPrivate || false,
-        notes: originalWebsite.notes || ''
+        isFavorite: originalWebsite.isFavorite || false
       }
       
-      this.editTagInput = ''
-      this.editUrlError = ''
       this.showEditDialog = true
-    },
-    
-    // 标签管理方法
-    addEditTag() {
-      if (this.editTagInput.trim() && !this.editWebsiteData.tags.includes(this.editTagInput.trim())) {
-        this.editWebsiteData.tags.push(this.editTagInput.trim())
-        this.editTagInput = ''
-      }
-    },
-    
-    removeEditTag(index) {
-      this.editWebsiteData.tags.splice(index, 1)
     },
     
     // 关闭编辑对话框
     closeEditDialog() {
       this.showEditDialog = false
-      this.editWebsiteData = {
-        id: '',
-        name: '',
-        url: '',
-        description: '',
-        tags: [],
-        isBookmark: false,
-        isPrivate: false,
-        notes: ''
-      }
-      this.editTagInput = ''
-      this.editUrlError = ''
+      this.editWebsiteData = null
     },
     
     // 保存网站编辑
-    async saveWebsiteEdit() {
+    async handleEditWebsiteConfirm(updatedWebsite) {
       try {
-        if (!this.isEditFormValid) {
+        if (!updatedWebsite.url || !updatedWebsite.url.trim()) {
           alertService.warning('请填写有效的URL')
           return
         }
         
         const updateData = {
-          name: this.editWebsiteData.name.trim() || this.websiteManager.getDomain(this.editWebsiteData.url),
-          url: this.editWebsiteData.url.trim(),
-          description: this.editWebsiteData.description.trim(),
-          tags: this.editWebsiteData.tags,
-          isBookmark: this.editWebsiteData.isBookmark,
-          isPrivate: this.editWebsiteData.isPrivate,
-          notes: this.editWebsiteData.notes.trim()
+          name: updatedWebsite.name.trim() || this.websiteManager.getDomain(updatedWebsite.url),
+          url: updatedWebsite.url.trim(),
+          description: updatedWebsite.description.trim(),
+          tags: updatedWebsite.tags,
+          isBookmark: updatedWebsite.isBookmark,
+          isFavorite: updatedWebsite.isFavorite
         }
         
-        await this.updateWebsiteInManager(this.editWebsiteData.id, updateData)
+        await this.updateWebsiteInManager(updatedWebsite.id, updateData)
         
         // 重新加载网站列表以确保数据同步
         await this.loadWebsites()
         
         // 如果当前显示的是这个网站的详情，也要更新
-        if (this.selectedWebsite && this.selectedWebsite.id === this.editWebsiteData.id) {
-          this.selectedWebsite = this.websites.find(w => w.id === this.editWebsiteData.id)
+        if (this.selectedWebsite && this.selectedWebsite.id === updatedWebsite.id) {
+          this.selectedWebsite = this.websites.find(w => w.id === updatedWebsite.id)
         }
         
         this.closeEditDialog()
